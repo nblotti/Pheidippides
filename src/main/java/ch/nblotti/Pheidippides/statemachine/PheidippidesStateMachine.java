@@ -33,6 +33,7 @@ public class PheidippidesStateMachine extends EnumStateMachineConfigurerAdapter<
       .state(STATES.INIT_DATABASE)
       .state(STATES.INIT_STREAMS)
       .state(STATES.WAIT_FOR_EVENT)
+      .state(STATES.TREATING_EVENT)
       .state(STATES.ERROR)
       .end(STATES.DONE)
       .end(STATES.CANCELED);
@@ -64,21 +65,21 @@ public class PheidippidesStateMachine extends EnumStateMachineConfigurerAdapter<
       .source(STATES.INIT_STREAMS).target(STATES.WAIT_FOR_EVENT).event(EVENTS.SUCCESS)
       .and()
       .withExternal()
+      .source(STATES.WAIT_FOR_EVENT).target(STATES.TREATING_EVENT).event(EVENTS.EVENT_RECEIVED)
+      .and()
+      .withExternal()
+      .source(STATES.TREATING_EVENT).target(STATES.WAIT_FOR_EVENT).event(EVENTS.EVENT_TREATED)
+      .and()
+      .withExternal()
+      .source(STATES.TREATING_EVENT).target(STATES.ERROR).event(EVENTS.ERROR)
+      .and()
+      .withExternal()
       .source(STATES.WAIT_FOR_EVENT).target(STATES.DONE).event(EVENTS.QUIT)
       .and()
       .withExternal()
       .source(STATES.ERROR).target(STATES.CANCELED);
 
   }
-
-
-  public TaskExecutor myAsyncTaskExecutor() {
-    ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
-    taskExecutor.setCorePoolSize(5);
-    taskExecutor.initialize();
-    return taskExecutor;
-  }
-
 
 }
 

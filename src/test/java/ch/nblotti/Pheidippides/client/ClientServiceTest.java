@@ -1,5 +1,7 @@
-package ch.nblotti.Pheidippides.zookeeper;
+package ch.nblotti.Pheidippides.client;
 
+import ch.nblotti.Pheidippides.statemachine.EVENTS;
+import ch.nblotti.Pheidippides.statemachine.STATES;
 import org.I0Itec.zkclient.IZkChildListener;
 import org.I0Itec.zkclient.ZkClient;
 import org.junit.Assert;
@@ -8,60 +10,63 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.statemachine.StateMachine;
 
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static ch.nblotti.Pheidippides.zookeeper.ZooKeeperService.*;
+import static ch.nblotti.Pheidippides.client.ClientService.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 
 @ExtendWith(MockitoExtension.class)
-class ZooKeeperServiceTest {
+class ClientServiceTest {
 
 
-  ZooKeeperService zooKeeperService;
+  ClientService clientService;
   ZkClient zkClient;
   DateTimeFormatter formatMessage;
+  StateMachine<STATES, EVENTS> stateMachine;
+
 
   @BeforeEach
   void beforeEach() {
     zkClient = Mockito.mock(ZkClient.class);
     formatMessage = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-
-    zooKeeperService = Mockito.spy(new ZooKeeperService(zkClient, formatMessage));
+    stateMachine = Mockito.mock(StateMachine.class);
+    clientService = Mockito.spy(new ClientService(zkClient, stateMachine,formatMessage));
   }
 
 
   @Test
   void subscribe() {
 
-    ClientListener listener = mock(ClientListener.class);
     // get the first free client
     String clientName = "test";
+    List<StrategiesDTO> strategies = Mockito.mock(List.class);
 
-    doReturn(clientName).when(zooKeeperService).selectFreeClient();
+    doReturn(clientName).when(clientService).selectFreeClient();
 
     // register as a client listener in Zookeeper
-    doNothing().when(zooKeeperService).registerToClientChanges(listener, clientName);
+    doNothing().when(clientService).registerToClientChanges(clientName);
 
 
     // read client database info and send a message to subscribers
-    doNothing().when(zooKeeperService).readDBInfoAndSendDBChangeInfo(clientName);
+    ClientDBInfo clientDBInfo =  clientService.readDBInfo(clientName);
 
     // read client strategy related info and send a message to subscribers
-    doNothing().when(zooKeeperService).chooseStrategyAndSendStrategyChangeEvent(clientName);
+    doReturn(strategies).when(clientService).chooseStrategy(clientName);
 
-    zooKeeperService.subscribe(listener);
+    clientService.subscribe();
 
-    verify(zooKeeperService, times(1)).selectFreeClient();
-    verify(zooKeeperService, times(1)).registerToClientChanges(listener, clientName);
-    verify(zooKeeperService, times(1)).readDBInfoAndSendDBChangeInfo(clientName);
-    verify(zooKeeperService, times(1)).chooseStrategyAndSendStrategyChangeEvent(clientName);
+
+
+    verify(clientService, times(1)).selectFreeClient();
+    verify(clientService, times(1)).registerToClientChanges(clientName);
+    verify(clientService, times(1)).buildAndSendUpdatedMessage(clientName, EVENTS.SUCCESS);
 
 
   }
@@ -70,19 +75,18 @@ class ZooKeeperServiceTest {
   void registerToClientChanges() {
 
     String clientName = "test";
-    ClientListener listener = mock(ClientListener.class);
 
 
-    doNothing().when(zooKeeperService).addToClientLiveNodes(clientName);
-    doNothing().when(zooKeeperService).registerToStrategyChanges(clientName);
-    doNothing().when(zooKeeperService).registerTODBInfoChangeEvent(clientName);
+    doNothing().when(clientService).addToClientLiveNodes(clientName);
+    doNothing().when(clientService).registerToStrategyChanges(clientName);
+    doNothing().when(clientService).registerTODBInfoChangeEvent(clientName);
 
 
-    zooKeeperService.registerToClientChanges(listener, clientName);
+    clientService.registerToClientChanges(clientName);
 
-    verify(zooKeeperService, times(1)).addToClientLiveNodes(clientName);
-    verify(zooKeeperService, times(1)).registerToStrategyChanges(clientName);
-    verify(zooKeeperService, times(1)).registerTODBInfoChangeEvent(clientName);
+    verify(clientService, times(1)).addToClientLiveNodes(clientName);
+    verify(clientService, times(1)).registerToStrategyChanges(clientName);
+    verify(clientService, times(1)).registerTODBInfoChangeEvent(clientName);
 
   }
 
@@ -93,10 +97,10 @@ class ZooKeeperServiceTest {
 
     List<String> clients = new ArrayList<>();
 
-    doReturn(clients).when(zooKeeperService).findAllClient();
+    doReturn(clients).when(clientService).findAllClient();
 
 
-    String returned = zooKeeperService.selectFreeClient();
+    String returned = clientService.selectFreeClient();
 
     Assert.assertNull(returned);
 
@@ -119,13 +123,13 @@ class ZooKeeperServiceTest {
     List<String> returnedFreeClient = mock(List.class);
     when(returnedNotFreeClient.size()).thenReturn(5);
     when(returnedFreeClient.size()).thenReturn(0);
-    doReturn(clients).when(zooKeeperService).findAllClient();
+    doReturn(clients).when(clientService).findAllClient();
 
-    doReturn(returnedNotFreeClient).when(zooKeeperService).getLiveNodes(firstClient);
-    doReturn(returnedNotFreeClient).when(zooKeeperService).getLiveNodes(secondClient);
-    doReturn(returnedFreeClient).when(zooKeeperService).getLiveNodes(thirdClient);
+    doReturn(returnedNotFreeClient).when(clientService).getLiveNodes(firstClient);
+    doReturn(returnedNotFreeClient).when(clientService).getLiveNodes(secondClient);
+    doReturn(returnedFreeClient).when(clientService).getLiveNodes(thirdClient);
 
-    String returned = zooKeeperService.selectFreeClient();
+    String returned = clientService.selectFreeClient();
 
     Assert.assertEquals(thirdClient, returned);
 
@@ -146,24 +150,24 @@ class ZooKeeperServiceTest {
 
     List<String> returnedNotFreeClient = mock(List.class);
     when(returnedNotFreeClient.size()).thenReturn(5);
-    doReturn(clients).when(zooKeeperService).findAllClient();
+    doReturn(clients).when(clientService).findAllClient();
 
-    doReturn(returnedNotFreeClient).when(zooKeeperService).getLiveNodes(firstClient);
-    doReturn(returnedNotFreeClient).when(zooKeeperService).getLiveNodes(secondClient);
-    doReturn(returnedNotFreeClient).when(zooKeeperService).getLiveNodes(thirdClient);
-    doReturn(returnedNotFreeClient).when(zooKeeperService).getLiveNodes(fourthClient);
+    doReturn(returnedNotFreeClient).when(clientService).getLiveNodes(firstClient);
+    doReturn(returnedNotFreeClient).when(clientService).getLiveNodes(secondClient);
+    doReturn(returnedNotFreeClient).when(clientService).getLiveNodes(thirdClient);
+    doReturn(returnedNotFreeClient).when(clientService).getLiveNodes(fourthClient);
 
 
-    doReturn(1).when(zooKeeperService).getLiveNodesCount(firstClient);
-    doReturn(1).when(zooKeeperService).getNodeAllowed(firstClient);
-    doReturn(1).when(zooKeeperService).getLiveNodesCount(secondClient);
-    doReturn(1).when(zooKeeperService).getNodeAllowed(secondClient);
-    doReturn(1).when(zooKeeperService).getLiveNodesCount(thirdClient);
-    doReturn(1).when(zooKeeperService).getNodeAllowed(thirdClient);
-    doReturn(1).when(zooKeeperService).getLiveNodesCount(fourthClient);
-    doReturn(2).when(zooKeeperService).getNodeAllowed(fourthClient);
+    doReturn(1).when(clientService).getLiveNodesCount(firstClient);
+    doReturn(1).when(clientService).getNodeAllowed(firstClient);
+    doReturn(1).when(clientService).getLiveNodesCount(secondClient);
+    doReturn(1).when(clientService).getNodeAllowed(secondClient);
+    doReturn(1).when(clientService).getLiveNodesCount(thirdClient);
+    doReturn(1).when(clientService).getNodeAllowed(thirdClient);
+    doReturn(1).when(clientService).getLiveNodesCount(fourthClient);
+    doReturn(2).when(clientService).getNodeAllowed(fourthClient);
 
-    String returned = zooKeeperService.selectFreeClient();
+    String returned = clientService.selectFreeClient();
 
     Assert.assertEquals(fourthClient, returned);
 
@@ -175,17 +179,16 @@ class ZooKeeperServiceTest {
 
     String clientStr = "first";
     String UUID = "UUID";
-    ClientListener listener = mock(ClientListener.class);
 
 
-    doReturn(UUID).when(zooKeeperService).getUuid();
+    doReturn(UUID).when(clientService).getUuid();
 
     String path = String.format(CLIENT_LIVE_NODES + "/%s", clientStr, UUID);
 
-    doNothing().when(zooKeeperService).addToLiveNodes(path);
-    zooKeeperService.addToClientLiveNodes(clientStr);
+    doNothing().when(clientService).addToLiveNodes(path);
+    clientService.addToClientLiveNodes(clientStr);
 
-    verify(zooKeeperService, times(1)).addToLiveNodes(path);
+    verify(clientService, times(1)).addToLiveNodes(path);
 
   }
 
@@ -202,9 +205,9 @@ class ZooKeeperServiceTest {
     liveNodes.add(secondEntry);
     liveNodes.add(thirdEntry);
 
-    doReturn(liveNodes).when(zooKeeperService).getLiveNodes(anyString());
+    doReturn(liveNodes).when(clientService).getLiveNodes(anyString());
 
-    int returned = zooKeeperService.getLiveNodesIndex(firstEntry);
+    int returned = clientService.getLiveNodesIndex(firstEntry);
 
     assertEquals(-1, returned);
   }
@@ -222,9 +225,9 @@ class ZooKeeperServiceTest {
     liveNodes.add(secondEntry);
     liveNodes.add(thirdEntry);
 
-    doReturn(liveNodes).when(zooKeeperService).getAllChildren(anyString());
-    doReturn(secondEntry).when(zooKeeperService).getUuid();
-    int returned = zooKeeperService.getLiveNodesIndex(secondEntry);
+    doReturn(liveNodes).when(clientService).getAllChildren(anyString());
+    doReturn(secondEntry).when(clientService).getUuid();
+    int returned = clientService.getLiveNodesIndex(secondEntry);
 
     assertEquals(2, returned);
   }
@@ -237,7 +240,7 @@ class ZooKeeperServiceTest {
     doReturn(Boolean.TRUE).when(zkClient).exists(pathStr);
     doReturn(returnStr).when(zkClient).getChildren(pathStr);
 
-    List<String> result = zooKeeperService.getAllChildren(pathStr);
+    List<String> result = clientService.getAllChildren(pathStr);
 
     Assert.assertEquals(result, returnStr);
 
@@ -251,7 +254,7 @@ class ZooKeeperServiceTest {
     doReturn(Boolean.FALSE).when(zkClient).exists(pathStr);
 
     Exception exception = assertThrows(IllegalStateException.class, () -> {
-      List<String> result = zooKeeperService.getAllChildren(pathStr);
+      List<String> result = clientService.getAllChildren(pathStr);
     });
 
     assertTrue(exception.getMessage().contains("No node /allNodes exists"));
@@ -267,7 +270,7 @@ class ZooKeeperServiceTest {
 
     doReturn(path).when(zkClient).readData(path, true);
 
-    String result = zooKeeperService.readNodeData(path);
+    String result = clientService.readNodeData(path);
 
     verify(zkClient, times(1)).readData(path, true);
 
@@ -282,7 +285,7 @@ class ZooKeeperServiceTest {
 
     doReturn(toReturn).when(zkClient).subscribeChildChanges(anyString(), any(IZkChildListener.class));
 
-    zooKeeperService.registerToStrategyChanges(clientStr);
+    clientService.registerToStrategyChanges(clientStr);
 
     verify(zkClient, times(3)).subscribeChildChanges(anyString(), any(IZkChildListener.class));
 
@@ -291,7 +294,7 @@ class ZooKeeperServiceTest {
 
   @Test
   public void closeConnection() {
-    zooKeeperService.closeConnection();
+    clientService.closeConnection();
 
     verify(zkClient, times(1)).close();
 
@@ -307,74 +310,39 @@ class ZooKeeperServiceTest {
     String dbPasswordStr = String.format(CLIENT_DB_PASSWORD, clientName);
     String dbPassword = "testpassword";
 
-    ClientListener listener1 = mock(ClientListener.class);
-    ClientListener listener2 = mock(ClientListener.class);
-    ClientListener listener3 = mock(ClientListener.class);
-    List<ClientListener> listeners = new ArrayList<>();
-
-    listeners.add(listener1);
-    listeners.add(listener2);
-    listeners.add(listener3);
-
-    doReturn(dbUrl).when(zooKeeperService).readNodeData(dbUrlStr);
-    doReturn(dbUser).when(zooKeeperService).readNodeData(dbUserStr);
-    doReturn(dbPassword).when(zooKeeperService).readNodeData(dbPasswordStr);
-    doReturn(listeners).when(zooKeeperService).getListeners();
-
-    zooKeeperService.readDBInfoAndSendDBChangeInfo(clientName);
 
 
-    verify(listener1, times(1)).handleDbInfoChange(dbUrl, dbUser, dbPassword);
-    verify(listener2, times(1)).handleDbInfoChange(dbUrl, dbUser, dbPassword);
-    verify(listener2, times(1)).handleDbInfoChange(dbUrl, dbUser, dbPassword);
+    doReturn(dbUrl).when(clientService).readNodeData(dbUrlStr);
+    doReturn(dbUser).when(clientService).readNodeData(dbUserStr);
+    doReturn(dbPassword).when(clientService).readNodeData(dbPasswordStr);
+
+    ClientDBInfo dbInfo = clientService.readDBInfo(clientName);
+
+
+    Assert.assertEquals(dbInfo.getDbUrl(), dbUrl);
+    Assert.assertEquals(dbInfo.getDbUser(), dbUser);
+    Assert.assertEquals(dbInfo.getDbPassword(), dbPassword);
 
   }
-
-  @Test
-  void chooseStrategyAndSendStrategyChangeEvent() {
-
-    String clientName = "test";
-    List<StrategiesDTO> followedRange = mock(List.class);
-
-    ClientListener listener1 = mock(ClientListener.class);
-    ClientListener listener2 = mock(ClientListener.class);
-    ClientListener listener3 = mock(ClientListener.class);
-    List<ClientListener> listeners = new ArrayList<>();
-
-    listeners.add(listener1);
-    listeners.add(listener2);
-    listeners.add(listener3);
-
-    doReturn(followedRange).when(zooKeeperService).chooseStrategy(clientName);
-    doReturn(listeners).when(zooKeeperService).getListeners();
-
-    zooKeeperService.chooseStrategyAndSendStrategyChangeEvent(clientName);
-
-    verify(listener1, times(1)).handleStrategyChange(followedRange);
-    verify(listener2, times(1)).handleStrategyChange(followedRange);
-    verify(listener2, times(1)).handleStrategyChange(followedRange);
-
-  }
-
 
   @Test
   void chooseStrategyNoStrategyForClient() {
 
     String clientName = "test";
     int position = 1;
-    doReturn(position).when(zooKeeperService).getLiveNodesIndex(clientName);
+    doReturn(position).when(clientService).getLiveNodesIndex(clientName);
     int liveNodeCount = 0;
-    doReturn(liveNodeCount).when(zooKeeperService).getLiveNodesCount(clientName);
+    doReturn(liveNodeCount).when(clientService).getLiveNodesCount(clientName);
 
     int allowedNode = 1;
-    doReturn(allowedNode).when(zooKeeperService).getNodeAllowed(clientName);
+    doReturn(allowedNode).when(clientService).getNodeAllowed(clientName);
 
     int strategiesCount = 0;
-    doReturn(strategiesCount).when(zooKeeperService).getStrategiesCount(clientName);
+    doReturn(strategiesCount).when(clientService).getStrategiesCount(clientName);
 
 
     Exception exception = assertThrows(IllegalStateException.class, () -> {
-      zooKeeperService.chooseStrategy(clientName);
+      clientService.chooseStrategy(clientName);
     });
   }
 
@@ -383,15 +351,15 @@ class ZooKeeperServiceTest {
 
     String clientName = "test";
     int position = 1;
-    doReturn(position).when(zooKeeperService).getLiveNodesIndex(clientName);
+    doReturn(position).when(clientService).getLiveNodesIndex(clientName);
     int liveNodeCount = 0;
-    doReturn(liveNodeCount).when(zooKeeperService).getLiveNodesCount(clientName);
+    doReturn(liveNodeCount).when(clientService).getLiveNodesCount(clientName);
 
     int allowedNode = 1;
-    doReturn(allowedNode).when(zooKeeperService).getNodeAllowed(clientName);
+    doReturn(allowedNode).when(clientService).getNodeAllowed(clientName);
 
     int strategiesCount = 2;
-    doReturn(strategiesCount).when(zooKeeperService).getStrategiesCount(clientName);
+    doReturn(strategiesCount).when(clientService).getStrategiesCount(clientName);
 
 
     List<String> strategies = new ArrayList<>();
@@ -401,10 +369,10 @@ class ZooKeeperServiceTest {
     strategies.add(firstStrategy);
     strategies.add(secondStrategy);
 
-    doReturn(strategies).when(zooKeeperService).getStrategies(clientName);
+    doReturn(strategies).when(clientService).getStrategies(clientName);
 
 
-    List<StrategiesDTO> returned = zooKeeperService.chooseStrategy(clientName);
+    List<StrategiesDTO> returned = clientService.chooseStrategy(clientName);
 
     assertEquals(returned.size(), 2);
     assertTrue(firstStrategy.equals(returned.get(0).getStrategyName()));
@@ -418,15 +386,15 @@ class ZooKeeperServiceTest {
 
     String clientName = "test";
     int position = 1;
-    doReturn(position).when(zooKeeperService).getLiveNodesIndex(clientName);
+    doReturn(position).when(clientService).getLiveNodesIndex(clientName);
     int liveNodeCount = 2;
-    doReturn(liveNodeCount).when(zooKeeperService).getLiveNodesCount(clientName);
+    doReturn(liveNodeCount).when(clientService).getLiveNodesCount(clientName);
 
     int allowedNode = 2;
-    doReturn(allowedNode).when(zooKeeperService).getNodeAllowed(clientName);
+    doReturn(allowedNode).when(clientService).getNodeAllowed(clientName);
 
     int strategiesCount = 2;
-    doReturn(strategiesCount).when(zooKeeperService).getStrategiesCount(clientName);
+    doReturn(strategiesCount).when(clientService).getStrategiesCount(clientName);
 
 
     List<String> strategies = new ArrayList<>();
@@ -436,10 +404,10 @@ class ZooKeeperServiceTest {
     strategies.add(firstStrategy);
     strategies.add(secondStrategy);
 
-    doReturn(strategies).when(zooKeeperService).getStrategies(clientName);
+    doReturn(strategies).when(clientService).getStrategies(clientName);
 
 
-    List<StrategiesDTO> returned = zooKeeperService.chooseStrategy(clientName);
+    List<StrategiesDTO> returned = clientService.chooseStrategy(clientName);
 
     assertEquals(1, returned.size());
     assertTrue(firstStrategy.equals(returned.get(0).getStrategyName()));
@@ -451,15 +419,15 @@ class ZooKeeperServiceTest {
 
     String clientName = "test";
     int position = 2;
-    doReturn(position).when(zooKeeperService).getLiveNodesIndex(clientName);
+    doReturn(position).when(clientService).getLiveNodesIndex(clientName);
     int liveNodeCount = 2;
-    doReturn(liveNodeCount).when(zooKeeperService).getLiveNodesCount(clientName);
+    doReturn(liveNodeCount).when(clientService).getLiveNodesCount(clientName);
 
     int allowedNode = 2;
-    doReturn(allowedNode).when(zooKeeperService).getNodeAllowed(clientName);
+    doReturn(allowedNode).when(clientService).getNodeAllowed(clientName);
 
     int strategiesCount = 2;
-    doReturn(strategiesCount).when(zooKeeperService).getStrategiesCount(clientName);
+    doReturn(strategiesCount).when(clientService).getStrategiesCount(clientName);
 
 
     List<String> strategies = new ArrayList<>();
@@ -469,10 +437,10 @@ class ZooKeeperServiceTest {
     strategies.add(firstStrategy);
     strategies.add(secondStrategy);
 
-    doReturn(strategies).when(zooKeeperService).getStrategies(clientName);
+    doReturn(strategies).when(clientService).getStrategies(clientName);
 
 
-    List<StrategiesDTO> returned = zooKeeperService.chooseStrategy(clientName);
+    List<StrategiesDTO> returned = clientService.chooseStrategy(clientName);
 
     assertEquals(1, returned.size());
     assertTrue(secondStrategy.equals(returned.get(0).getStrategyName()));
@@ -484,15 +452,15 @@ class ZooKeeperServiceTest {
 
     String clientName = "test";
     int position = 1;
-    doReturn(position).when(zooKeeperService).getLiveNodesIndex(clientName);
+    doReturn(position).when(clientService).getLiveNodesIndex(clientName);
     int liveNodeCount = 2;
-    doReturn(liveNodeCount).when(zooKeeperService).getLiveNodesCount(clientName);
+    doReturn(liveNodeCount).when(clientService).getLiveNodesCount(clientName);
 
     int allowedNode = 2;
-    doReturn(allowedNode).when(zooKeeperService).getNodeAllowed(clientName);
+    doReturn(allowedNode).when(clientService).getNodeAllowed(clientName);
 
     int strategiesCount = 3;
-    doReturn(strategiesCount).when(zooKeeperService).getStrategiesCount(clientName);
+    doReturn(strategiesCount).when(clientService).getStrategiesCount(clientName);
 
 
     List<String> strategies = new ArrayList<>();
@@ -504,10 +472,10 @@ class ZooKeeperServiceTest {
     strategies.add(secondStrategy);
     strategies.add(thirdStrategy);
 
-    doReturn(strategies).when(zooKeeperService).getStrategies(clientName);
+    doReturn(strategies).when(clientService).getStrategies(clientName);
 
 
-    List<StrategiesDTO> returned = zooKeeperService.chooseStrategy(clientName);
+    List<StrategiesDTO> returned = clientService.chooseStrategy(clientName);
 
     assertEquals(1, returned.size());
     assertTrue(firstStrategy.equals(returned.get(0).getStrategyName()));
@@ -519,15 +487,15 @@ class ZooKeeperServiceTest {
 
     String clientName = "test";
     int position = 2;
-    doReturn(position).when(zooKeeperService).getLiveNodesIndex(clientName);
+    doReturn(position).when(clientService).getLiveNodesIndex(clientName);
     int liveNodeCount = 2;
-    doReturn(liveNodeCount).when(zooKeeperService).getLiveNodesCount(clientName);
+    doReturn(liveNodeCount).when(clientService).getLiveNodesCount(clientName);
 
     int allowedNode = 2;
-    doReturn(allowedNode).when(zooKeeperService).getNodeAllowed(clientName);
+    doReturn(allowedNode).when(clientService).getNodeAllowed(clientName);
 
     int strategiesCount = 3;
-    doReturn(strategiesCount).when(zooKeeperService).getStrategiesCount(clientName);
+    doReturn(strategiesCount).when(clientService).getStrategiesCount(clientName);
 
 
     List<String> strategies = new ArrayList<>();
@@ -539,10 +507,10 @@ class ZooKeeperServiceTest {
     strategies.add(secondStrategy);
     strategies.add(thirdStrategy);
 
-    doReturn(strategies).when(zooKeeperService).getStrategies(clientName);
+    doReturn(strategies).when(clientService).getStrategies(clientName);
 
 
-    List<StrategiesDTO> returned = zooKeeperService.chooseStrategy(clientName);
+    List<StrategiesDTO> returned = clientService.chooseStrategy(clientName);
 
     assertEquals(2, returned.size());
     assertTrue(secondStrategy.equals(returned.get(0).getStrategyName()));
@@ -555,15 +523,15 @@ class ZooKeeperServiceTest {
 
     String clientName = "test";
     int position = 3;
-    doReturn(position).when(zooKeeperService).getLiveNodesIndex(clientName);
+    doReturn(position).when(clientService).getLiveNodesIndex(clientName);
     int liveNodeCount = 3;
-    doReturn(liveNodeCount).when(zooKeeperService).getLiveNodesCount(clientName);
+    doReturn(liveNodeCount).when(clientService).getLiveNodesCount(clientName);
 
     int allowedNode = 3;
-    doReturn(allowedNode).when(zooKeeperService).getNodeAllowed(clientName);
+    doReturn(allowedNode).when(clientService).getNodeAllowed(clientName);
 
     int strategiesCount = 7;
-    doReturn(strategiesCount).when(zooKeeperService).getStrategiesCount(clientName);
+    doReturn(strategiesCount).when(clientService).getStrategiesCount(clientName);
 
     List<String> strategies = new ArrayList<>();
     String firstStrategy = "firstStrategy";
@@ -584,10 +552,10 @@ class ZooKeeperServiceTest {
     strategies.add(seventhStrategy);
 
 
-    doReturn(strategies).when(zooKeeperService).getStrategies(clientName);
+    doReturn(strategies).when(clientService).getStrategies(clientName);
 
 
-    List<StrategiesDTO> returned = zooKeeperService.chooseStrategy(clientName);
+    List<StrategiesDTO> returned = clientService.chooseStrategy(clientName);
 
     assertEquals(3, returned.size());
     assertTrue(fifthtrategy.equals(returned.get(0).getStrategyName()));
@@ -602,15 +570,15 @@ class ZooKeeperServiceTest {
 
     String clientName = "test";
     int position = 2;
-    doReturn(position).when(zooKeeperService).getLiveNodesIndex(clientName);
+    doReturn(position).when(clientService).getLiveNodesIndex(clientName);
     int liveNodeCount = 3;
-    doReturn(liveNodeCount).when(zooKeeperService).getLiveNodesCount(clientName);
+    doReturn(liveNodeCount).when(clientService).getLiveNodesCount(clientName);
 
     int allowedNode = 3;
-    doReturn(allowedNode).when(zooKeeperService).getNodeAllowed(clientName);
+    doReturn(allowedNode).when(clientService).getNodeAllowed(clientName);
 
     int strategiesCount = 7;
-    doReturn(strategiesCount).when(zooKeeperService).getStrategiesCount(clientName);
+    doReturn(strategiesCount).when(clientService).getStrategiesCount(clientName);
 
     List<String> strategies = new ArrayList<>();
     String firstStrategy = "firstStrategy";
@@ -631,10 +599,10 @@ class ZooKeeperServiceTest {
     strategies.add(seventhStrategy);
 
 
-    doReturn(strategies).when(zooKeeperService).getStrategies(clientName);
+    doReturn(strategies).when(clientService).getStrategies(clientName);
 
 
-    List<StrategiesDTO> returned = zooKeeperService.chooseStrategy(clientName);
+    List<StrategiesDTO> returned = clientService.chooseStrategy(clientName);
 
     assertEquals(2, returned.size());
     assertTrue(thirdStrategy.equals(returned.get(0).getStrategyName()));
@@ -656,10 +624,10 @@ class ZooKeeperServiceTest {
     liveNodes.add(secondEntry);
     liveNodes.add(thirdEntry);
 
-    doReturn(liveNodes).when(zooKeeperService).getLiveNodes(clientName);
-    doReturn(secondEntry).when(zooKeeperService).getUuid();
+    doReturn(liveNodes).when(clientService).getLiveNodes(clientName);
+    doReturn(secondEntry).when(clientService).getUuid();
 
-    int index = zooKeeperService.getLiveNodesIndex(clientName);
+    int index = clientService.getLiveNodesIndex(clientName);
 
     assertEquals(2, index);
   }
@@ -680,10 +648,10 @@ class ZooKeeperServiceTest {
     liveNodes.add(secondEntry);
     liveNodes.add(thirdEntry);
 
-    doReturn(liveNodes).when(zooKeeperService).getLiveNodes(clientName);
-    doReturn(fourthEntry).when(zooKeeperService).getUuid();
+    doReturn(liveNodes).when(clientService).getLiveNodes(clientName);
+    doReturn(fourthEntry).when(clientService).getUuid();
 
-    int index = zooKeeperService.getLiveNodesIndex(clientName);
+    int index = clientService.getLiveNodesIndex(clientName);
 
     assertEquals(-1, index);
   }
@@ -693,9 +661,9 @@ class ZooKeeperServiceTest {
     String clientName = "clientName";
     String path = String.format(CLIENT_NODE_ALLOWED, clientName);
 
-    doReturn("3").when(zooKeeperService).readNodeData(path);
+    doReturn("3").when(clientService).readNodeData(path);
 
-    int returned = zooKeeperService.getNodeAllowed(clientName);
+    int returned = clientService.getNodeAllowed(clientName);
     Assert.assertEquals(3, returned);
 
 
@@ -707,10 +675,10 @@ class ZooKeeperServiceTest {
     String clientName = "clientName";
     String path = String.format(CLIENT_NODE_ALLOWED, clientName);
 
-    doReturn("").when(zooKeeperService).readNodeData(path);
+    doReturn("").when(clientService).readNodeData(path);
 
 
-      int returned = zooKeeperService.getNodeAllowed(clientName);
+      int returned = clientService.getNodeAllowed(clientName);
 
     Assert.assertEquals(0, returned);
   }

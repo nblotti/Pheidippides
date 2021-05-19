@@ -1,20 +1,24 @@
-package ch.nblotti.Pheidippides.zookeeper;
+package ch.nblotti.Pheidippides.client;
 
+import ch.nblotti.Pheidippides.statemachine.EVENTS;
+import ch.nblotti.Pheidippides.statemachine.STATES;
 import lombok.extern.slf4j.Slf4j;
 import org.I0Itec.zkclient.IZkChildListener;
 import org.I0Itec.zkclient.ZkClient;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.statemachine.StateMachine;
 import org.springframework.stereotype.Repository;
 import org.springframework.validation.annotation.Validated;
 
-import java.net.http.WebSocket;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
@@ -22,7 +26,7 @@ import java.util.List;
 @Slf4j
 @Validated
 @Scope(value = ConfigurableBeanFactory.SCOPE_SINGLETON)
-public class ZooKeeperService {
+public class ClientService {
 
 
   public static final String CLIENTS = "/rstrategy/clients";
@@ -40,39 +44,57 @@ public class ZooKeeperService {
   private final String UUID;
   private final DateTimeFormatter formatMessage;
 
-
-  private final List<ClientListener> listeners = new ArrayList<>();
+  private StateMachine<STATES, EVENTS> stateMachine;
 
 
   @Autowired
-  public ZooKeeperService(ZkClient zkClient, DateTimeFormatter formatMessage) {
+  public ClientService(ZkClient zkClient, StateMachine<STATES, EVENTS>  stateMachine, DateTimeFormatter formatMessage) {
 
     this.zkClient = zkClient;
+    this.stateMachine = stateMachine;
     this.UUID = java.util.UUID.randomUUID().toString();
     this.formatMessage = formatMessage;
   }
 
-  public void subscribe(ClientListener listener) {
+  public void subscribe() {
+
 
     // get the first free client
     String clientName = selectFreeClient();
 
     // register as a client listener in Zookeeper
-    registerToClientChanges(listener, clientName);
+    registerToClientChanges(clientName);
 
-    // read client database info and send a message to subscribers
-    readDBInfoAndSendDBChangeInfo(clientName);
+    buildAndSendUpdatedMessage(clientName, EVENTS.SUCCESS);
 
-    // read client strategy related info and send a message to subscribers
-    chooseStrategyAndSendStrategyChangeEvent(clientName);
 
   }
 
-  void registerToClientChanges(ClientListener listener, String clientName) {
+  void buildAndSendUpdatedMessage(String clientName, EVENTS events) {
+
+    // read client database info and send a message to subscribers
+    ClientDBInfo clientDBinfo = readDBInfo(clientName);
+
+    // read client strategy related info and send a message to subscribers
+    List<StrategiesDTO> strategies = chooseStrategy(clientName);
+
+    ClientDTO clientDTO = new ClientDTO(clientName, clientDBinfo, strategies);
+
+    Message<EVENTS> message = MessageBuilder
+      .withPayload(events)
+      .setHeader("clientDTO", clientDTO)
+      .build();
+
+    stateMachine.sendEvent(message);
+
+
+  }
+
+
+  void registerToClientChanges(String clientName) {
     addToClientLiveNodes(clientName);
     registerToStrategyChanges(clientName);
     registerTODBInfoChangeEvent(clientName);
-    this.listeners.add(listener);
   }
 
 
@@ -115,7 +137,7 @@ public class ZooKeeperService {
       @Override
       public void handleChildChange(String parentPath, List<String> list) throws Exception {
         String[] clients = parentPath.split("/");
-        chooseStrategyAndSendStrategyChangeEvent(clients[clients.length - 2]);
+       buildAndSendUpdatedMessage(clients[clients.length - 2],EVENTS.EVENT_RECEIVED);
       }
     });
 
@@ -123,14 +145,14 @@ public class ZooKeeperService {
       @Override
       public void handleChildChange(String parentPath, List<String> list) throws Exception {
         String[] clients = parentPath.split("/");
-        chooseStrategyAndSendStrategyChangeEvent(clients[clients.length - 2]);
+        buildAndSendUpdatedMessage(clients[clients.length - 2],EVENTS.EVENT_RECEIVED);
       }
     });
     List<String> strategies = zkClient.subscribeChildChanges(strategiesPath, new IZkChildListener() {
       @Override
       public void handleChildChange(String parentPath, List<String> list) throws Exception {
         String[] clients = parentPath.split("/");
-        chooseStrategyAndSendStrategyChangeEvent(clients[clients.length - 2]);
+        buildAndSendUpdatedMessage(clients[clients.length - 2],EVENTS.EVENT_RECEIVED);
 
       }
     });
@@ -146,29 +168,22 @@ public class ZooKeeperService {
       @Override
       public void handleChildChange(String parentPath, List<String> list) throws Exception {
         String[] clients = parentPath.split("/");
-        readDBInfoAndSendDBChangeInfo(clients[clients.length - 2]);
+        buildAndSendUpdatedMessage(clients[clients.length - 2],EVENTS.EVENT_RECEIVED);
       }
     });
 
 
   }
 
-  public void readDBInfoAndSendDBChangeInfo(String clientName) {
+  public ClientDBInfo readDBInfo(String clientName) {
 
     String dbUrl = readNodeData(String.format(CLIENT_DB_URL, clientName));
     String dbUser = readNodeData(String.format(CLIENT_DB_USER, clientName));
     String dbPassword = readNodeData(String.format(CLIENT_DB_PASSWORD, clientName));
-    getListeners().stream().forEach(s -> s.handleDbInfoChange(dbUrl, dbUser, dbPassword));
+
+    return new ClientDBInfo(dbUrl, dbUser, dbPassword);
   }
 
-  List<ClientListener> getListeners() {
-    return this.listeners;
-  }
-
-  void chooseStrategyAndSendStrategyChangeEvent(String clientName) {
-    List<StrategiesDTO> followedRange = chooseStrategy(clientName);
-    getListeners().stream().forEach(s -> s.handleStrategyChange(followedRange));
-  }
 
   List<StrategiesDTO> chooseStrategy(String clientName) {
 
@@ -229,36 +244,36 @@ public class ZooKeeperService {
 
   }
 
-   int getLiveNodesCount(String clientName) {
+  int getLiveNodesCount(String clientName) {
     return getLiveNodes(clientName).size();
   }
 
-   List<String> getLiveNodes(String clientName) {
+  List<String> getLiveNodes(String clientName) {
     return getAllChildren(String.format(CLIENT_LIVE_NODES, clientName));
   }
 
-   int getStrategiesCount(String clientName) {
+  int getStrategiesCount(String clientName) {
     return getStrategies(clientName).size();
   }
 
-   List<String> getStrategies(String clientName) {
+  List<String> getStrategies(String clientName) {
     return getAllChildren(String.format(CLIENT_STRATEGIES, clientName));
   }
 
 
-   List<String> findAllClient() {
+  List<String> findAllClient() {
     return getAllChildren(CLIENTS);
   }
 
 
-   void addToLiveNodes(String nodeName) {
+  void addToLiveNodes(String nodeName) {
 
     String path = zkClient.create(nodeName, "", ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
 
   }
 
 
-   int getLiveNodesIndex(String clientName) {
+  int getLiveNodesIndex(String clientName) {
     int result = 0;
     for (String entry : getLiveNodes(clientName)) {
       if (entry.equals(getUuid())) return ++result;
@@ -275,12 +290,12 @@ public class ZooKeeperService {
     return zkClient.getChildren(id);
   }
 
-   String readNodeData(String path) {
+  String readNodeData(String path) {
     return zkClient.readData(path, true);
   }
 
 
-   void closeConnection() {
+  void closeConnection() {
     zkClient.close();
   }
 

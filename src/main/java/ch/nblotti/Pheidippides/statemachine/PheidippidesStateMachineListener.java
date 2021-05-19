@@ -1,56 +1,69 @@
 package ch.nblotti.Pheidippides.statemachine;
 
-import ch.nblotti.Pheidippides.zookeeper.ClientListener;
-import ch.nblotti.Pheidippides.zookeeper.StrategiesDTO;
-import ch.nblotti.Pheidippides.zookeeper.ZooKeeperService;
+import ch.nblotti.Pheidippides.client.ClientDTO;
+import ch.nblotti.Pheidippides.client.ClientService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.statemachine.StateMachine;
+import org.springframework.statemachine.annotation.EventHeader;
 import org.springframework.statemachine.annotation.OnTransition;
 import org.springframework.statemachine.annotation.WithStateMachine;
-
-import java.util.List;
 
 @WithStateMachine
 @Slf4j
 public class PheidippidesStateMachineListener {
 
-  private final ZooKeeperService zooKeeperService;
+  private final ClientService clientService;
 
   @Autowired
-  public PheidippidesStateMachineListener(ZooKeeperService zooKeeperService) {
-    this.zooKeeperService = zooKeeperService;
+  public PheidippidesStateMachineListener(ClientService clientService) {
+    this.clientService = clientService;
   }
 
-  @StatesOnTransition(source = STATES.READY, target = STATES.INIT_ZOOKEEPER)
-  public void fromReadyToFreeClient() {
+  @StatesOnEntry(target = STATES.READY)
+  public void ready(StateMachine<STATES, EVENTS> stateMachine) {
 
-    zooKeeperService.subscribe(new ClientListener() {
-      @Override
-      public void handleStrategyChange(List<StrategiesDTO> strategiesDTOS) {
-        strategiesDTOS.stream().forEach(i -> log.info(String.format("Client id : %s - Strategy name : %s", i.getClientName(), i.getStrategyName())));
-      }
-
-      @Override
-      public void handleDbInfoChange(String url, String user, String password) {
-        log.info(String.format("DB url : %s - User : %s - Password : %s", url,user,password));
-      }
-    });
-
-  }
-  @StatesOnTransition(source = STATES.INIT_ZOOKEEPER, target = STATES.INIT_DATABASE)
-  public void fromFreeClientToRegisterNode() {
+    stateMachine.sendEvent(EVENTS.SUCCESS);
 
   }
 
-  @StatesOnTransition(source = STATES.INIT_DATABASE, target = STATES.INIT_STREAMS)
-  public void fromRegisterNodeToReadClientData() {
+  @StatesOnEntry(target = STATES.INIT_ZOOKEEPER)
+  public void initZookeeper() {
+
+    clientService.subscribe();
+  }
+
+  @StatesOnEntry(target = STATES.INIT_DATABASE)
+  public void initDatabase(StateMachine<STATES, EVENTS> stateMachine, @EventHeader ClientDTO clientDTO) {
+
+    stateMachine.sendEvent(EVENTS.SUCCESS);
+  }
+
+  @StatesOnEntry(target = STATES.INIT_STREAMS)
+  public void initStreams(StateMachine<STATES, EVENTS> stateMachine) {
+
+    stateMachine.sendEvent(EVENTS.SUCCESS);
 
   }
 
-  @StatesOnTransition(source = STATES.INIT_STREAMS, target = STATES.DONE)
-  public void fromReadClientDataToConnectDB() {
+
+  @StatesOnEntry(target = STATES.WAIT_FOR_EVENT)
+  public void waitForEvent() {
+
+    //stateMachine.sendEvent(EVENTS.EVENT_RECEIVED);
 
   }
+
+  @StatesOnEntry(target = STATES.TREATING_EVENT)
+  public void treatingEvent(StateMachine<STATES, EVENTS> stateMachine,@EventHeader ClientDTO clientDTO) {
+
+    stateMachine.sendEvent(EVENTS.EVENT_TREATED);
+
+  }
+
+
+
+
 
   @OnTransition
   public void toError() {

@@ -1,4 +1,4 @@
-package ch.nblotti.Pheidippides.zookeeper;
+package ch.nblotti.Pheidippides.client;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
