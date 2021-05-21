@@ -37,6 +37,7 @@ public class PheidippidesStateMachineListener {
   public void initDatabase(StateMachine<STATES, EVENTS> stateMachine, @EventHeader ClientDTO clientDTO) {
 
     stateMachine.sendEvent(EVENTS.SUCCESS);
+    log.info(String.format("Following client with id %s - managing %s strategies",clientDTO.getUserName(),clientDTO.getStrategies().size()));
   }
 
   @StatesOnEntry(target = STATES.INIT_STREAMS)
@@ -58,7 +59,7 @@ public class PheidippidesStateMachineListener {
   public void treatingEvent(StateMachine<STATES, EVENTS> stateMachine,@EventHeader ClientDTO clientDTO) {
 
     stateMachine.sendEvent(EVENTS.EVENT_TREATED);
-
+    log.info(String.format("Change detected in followed client (id %s) - now managing %s strategies",clientDTO.getUserName(),clientDTO.getStrategies().size()));
   }
 
 

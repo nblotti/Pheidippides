@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: nblotti
-          image: nblotti/pheidippides:v0.0.1
+          image: nblotti/pheidippides:v2.0.1
           ports:
             - containerPort: 8080
           livenessProbe:
