@@ -195,20 +195,8 @@ public class PheidippidesApplication implements CommandLineRunner {
     stateMachine.sendEvent(EVENTS.EVENT_RECEIVED);
     BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 
-    while (!stateMachine.isComplete()) {
-
-      System.out.print("> ");
-
-      String line = br.readLine().trim();
-
-      if (line.isEmpty()) {
-        continue;
-      }
-
-      if (line.toLowerCase().startsWith("exit")) {
-
-        break;
-      }
+    while (!stateMachine.isComplete()){
+      Thread.sleep(500);
     }
 
 
