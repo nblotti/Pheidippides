@@ -2,11 +2,11 @@ package ch.nblotti.Pheidippides.statemachine;
 
 import ch.nblotti.Pheidippides.client.ClientDTO;
 import ch.nblotti.Pheidippides.client.ClientService;
+import ch.nblotti.Pheidippides.database.RoutingDataSource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.annotation.EventHeader;
-import org.springframework.statemachine.annotation.OnTransition;
 import org.springframework.statemachine.annotation.WithStateMachine;
 
 @WithStateMachine
@@ -15,9 +15,12 @@ public class PheidippidesStateMachineListener {
 
   private final ClientService clientService;
 
+  private final RoutingDataSource routingDataSource;
+
   @Autowired
-  public PheidippidesStateMachineListener(ClientService clientService) {
+  public PheidippidesStateMachineListener(ClientService clientService, RoutingDataSource routingDataSource) {
     this.clientService = clientService;
+    this.routingDataSource = routingDataSource;
   }
 
   @StatesOnEntry(target = STATES.READY)
@@ -36,38 +39,58 @@ public class PheidippidesStateMachineListener {
   @StatesOnEntry(target = STATES.INIT_DATABASE)
   public void initDatabase(StateMachine<STATES, EVENTS> stateMachine, @EventHeader ClientDTO clientDTO) {
 
+
+    try {
+      routingDataSource.createDataSource(clientDTO.getDbUrl(), clientDTO.getDbUser(), clientDTO.getDbPassword());
+    } catch (Exception e) {
+      stateMachine.sendEvent(EVENTS.ERROR);
+      return;
+    }
+
     stateMachine.sendEvent(EVENTS.SUCCESS);
-    log.info(String.format("Following client with id %s - managing %s strategies",clientDTO.getUserName(),clientDTO.getStrategies().size()));
+    log.info(String.format("Following client with id %s - managing %s strategies", clientDTO.getUserName(), clientDTO.getStrategies().size()));
   }
 
   @StatesOnEntry(target = STATES.INIT_STREAMS)
   public void initStreams(StateMachine<STATES, EVENTS> stateMachine) {
-
     stateMachine.sendEvent(EVENTS.SUCCESS);
 
   }
 
 
   @StatesOnEntry(target = STATES.WAIT_FOR_EVENT)
-  public void waitForEvent() {
+  public void waitForEvent(StateMachine<STATES, EVENTS> stateMachine) {
 
-    //stateMachine.sendEvent(EVENTS.EVENT_RECEIVED);
 
   }
 
-  @StatesOnEntry(target = STATES.TREATING_EVENT)
-  public void treatingEvent(StateMachine<STATES, EVENTS> stateMachine,@EventHeader ClientDTO clientDTO) {
+  @StatesOnEntry(target = STATES.TREATING_ZK_STRATEGIES_EVENT)
+  public void treatingZKStrategiesEvent(StateMachine<STATES, EVENTS> stateMachine, @EventHeader ClientDTO clientDTO) {
 
     stateMachine.sendEvent(EVENTS.EVENT_TREATED);
-    log.info(String.format("Change detected in followed client (id %s) - now managing %s strategies",clientDTO.getUserName(),clientDTO.getStrategies().size()));
+    log.info(String.format("Change detected in followed client (id %s) - now managing %s strategies", clientDTO.getUserName(), clientDTO.getStrategies().size()));
   }
 
 
+  @StatesOnEntry(target = STATES.TREATING_ZK_DB_EVENT)
+  public void treatingZKDBEvent(StateMachine<STATES, EVENTS> stateMachine, @EventHeader ClientDTO clientDTO) {
+
+    try {
+      routingDataSource.createDataSource(clientDTO.getDbUrl(), clientDTO.getDbUser(), clientDTO.getDbPassword());
+    } catch (Exception e) {
+      stateMachine.sendEvent(EVENTS.ERROR);
+      return;
+    }
+    stateMachine.sendEvent(EVENTS.EVENT_TREATED);
+    log.info(String.format("Change detected in followed client (id %s) - now managing %s strategies", clientDTO.getUserName(), clientDTO.getStrategies().size()));
+  }
 
 
+  @StatesOnEntry(target = STATES.ERROR)
+  public void toError(StateMachine<STATES, EVENTS> stateMachine) {
+    log.info(String.format("Error, quitting"));
+    stateMachine.stop();
 
-  @OnTransition
-  public void toError() {
   }
 
 }

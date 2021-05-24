@@ -4,6 +4,7 @@ import ch.nblotti.Pheidippides.statemachine.EVENTS;
 import ch.nblotti.Pheidippides.statemachine.STATES;
 import lombok.extern.slf4j.Slf4j;
 import org.I0Itec.zkclient.IZkChildListener;
+import org.I0Itec.zkclient.IZkDataListener;
 import org.I0Itec.zkclient.ZkClient;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs;
@@ -136,23 +137,20 @@ public class ClientService {
     List<String> allowedNodes = zkClient.subscribeChildChanges(nodeAllowedPath, new IZkChildListener() {
       @Override
       public void handleChildChange(String parentPath, List<String> list) throws Exception {
-        String[] clients = parentPath.split("/");
-       buildAndSendUpdatedMessage(clients[clients.length - 2],EVENTS.EVENT_RECEIVED);
+       buildAndSendUpdatedMessage(clientName,EVENTS.ZK_STRATEGIES_EVENT_RECEIVED);
       }
     });
 
     List<String> liveNodes = zkClient.subscribeChildChanges(liveNodesPath, new IZkChildListener() {
       @Override
       public void handleChildChange(String parentPath, List<String> list) throws Exception {
-        String[] clients = parentPath.split("/");
-        buildAndSendUpdatedMessage(clients[clients.length - 2],EVENTS.EVENT_RECEIVED);
+        buildAndSendUpdatedMessage(clientName,EVENTS.ZK_STRATEGIES_EVENT_RECEIVED);
       }
     });
     List<String> strategies = zkClient.subscribeChildChanges(strategiesPath, new IZkChildListener() {
       @Override
       public void handleChildChange(String parentPath, List<String> list) throws Exception {
-        String[] clients = parentPath.split("/");
-        buildAndSendUpdatedMessage(clients[clients.length - 2],EVENTS.EVENT_RECEIVED);
+        buildAndSendUpdatedMessage(clientName,EVENTS.ZK_STRATEGIES_EVENT_RECEIVED);
 
       }
     });
@@ -164,12 +162,18 @@ public class ClientService {
     String dbNodesPath = String.format(CLIENT_DB_URL, clientName);
 
 
-    List<String> liveNodes = zkClient.subscribeChildChanges(dbNodesPath, new IZkChildListener() {
+     zkClient.subscribeDataChanges(dbNodesPath, new IZkDataListener() {
+
       @Override
-      public void handleChildChange(String parentPath, List<String> list) throws Exception {
-        String[] clients = parentPath.split("/");
-        buildAndSendUpdatedMessage(clients[clients.length - 2],EVENTS.EVENT_RECEIVED);
+      public void handleDataChange(String s, Object o) throws Exception {
+        buildAndSendUpdatedMessage(clientName,EVENTS.ZK_DB_EVENT_RECEIVED);
       }
+
+      @Override
+      public void handleDataDeleted(String s) throws Exception {
+        buildAndSendUpdatedMessage(clientName,EVENTS.ZK_DB_EVENT_RECEIVED);
+      }
+
     });
 
 

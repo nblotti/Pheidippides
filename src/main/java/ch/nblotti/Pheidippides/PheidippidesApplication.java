@@ -1,9 +1,13 @@
 package ch.nblotti.Pheidippides;
 
 import ch.nblotti.Pheidippides.client.ClientDTO;
+import ch.nblotti.Pheidippides.database.RoutingDataSource;
 import ch.nblotti.Pheidippides.statemachine.EVENTS;
 import ch.nblotti.Pheidippides.statemachine.STATES;
+import lombok.extern.slf4j.Slf4j;
 import org.I0Itec.zkclient.ZkClient;
+import org.I0Itec.zkclient.exception.ZkMarshallingError;
+import org.I0Itec.zkclient.serialize.ZkSerializer;
 import org.modelmapper.AbstractProvider;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.Provider;
@@ -11,17 +15,45 @@ import org.modelmapper.spring.SpringIntegration;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
+import org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration;
+import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Scope;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.messaging.Message;
+import org.springframework.orm.jpa.JpaTransactionManager;
+import org.springframework.orm.jpa.JpaVendorAdapter;
+import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
+import org.springframework.statemachine.StateContext;
 import org.springframework.statemachine.StateMachine;
+import org.springframework.statemachine.annotation.WithStateMachine;
 import org.springframework.statemachine.config.StateMachineFactory;
+import org.springframework.statemachine.listener.StateMachineListener;
+import org.springframework.statemachine.state.State;
+import org.springframework.statemachine.transition.Transition;
+import org.springframework.transaction.PlatformTransactionManager;
 
+import javax.annotation.PostConstruct;
+import javax.sql.DataSource;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.time.format.DateTimeFormatter;
+import java.util.Properties;
 
-@SpringBootApplication
-public class PheidippidesApplication {
+@SpringBootApplication(exclude = {
+  FlywayAutoConfiguration.class})
+@Slf4j
+public class PheidippidesApplication implements CommandLineRunner {
 
   public static void main(String[] args) {
     SpringApplication.run(PheidippidesApplication.class, args);
@@ -55,7 +87,32 @@ public class PheidippidesApplication {
   @Scope("singleton")
   ZkClient zkClient() {
 
-    return new ZkClient(connectString, 12000, 3000);
+    return new ZkClient(connectString, 12000, 3000,zkSerializer() );
+  }
+
+  public ZkSerializer zkSerializer() {
+    return new ZkSerializer() {
+
+      @Override
+      public byte[] serialize(Object data) throws ZkMarshallingError {
+        try {
+          return ((String) data).getBytes("UTF-8");
+        } catch (UnsupportedEncodingException e) {
+          throw new RuntimeException(e);
+        }
+      }
+
+      @Override
+      public Object deserialize(byte[] bytes) throws ZkMarshallingError {
+        if (bytes == null)
+          return null;
+        try {
+          return new String(bytes, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+          throw new RuntimeException(e);
+        }
+      }
+    };
   }
 
   @Bean
@@ -63,4 +120,99 @@ public class PheidippidesApplication {
     return new ModelMapper();
   }
 
+
+  @Bean
+  public DataSource createDefaultSource() {
+    DriverManagerDataSource dataSource = new DriverManagerDataSource();
+    dataSource.setDriverClassName("org.h2.Driver");
+    dataSource.setUrl("jdbc:h2:mem:db;DB_CLOSE_DELAY=-1");
+    dataSource.setUsername("sa");
+    dataSource.setPassword("sa");
+
+    return dataSource;
+  }
+
+  /*
+    public DataSource createDefaultSource() {
+      DriverManagerDataSource dataSource = new DriverManagerDataSource();
+      dataSource.setDriverClassName(driver);
+      dataSource.setUrl(url);
+      dataSource.setUsername(username);
+      dataSource.setPassword(password);
+      return dataSource;
+    }
+  */
+  @Bean
+  @Scope("singleton")
+  public RoutingDataSource routingDatasource() {
+
+    return new RoutingDataSource(createDefaultSource());
+
+  }
+
+  @Bean
+  public LocalContainerEntityManagerFactoryBean entityManagerFactory(RoutingDataSource routingDatasource) {
+    LocalContainerEntityManagerFactoryBean em
+      = new LocalContainerEntityManagerFactoryBean();
+    em.setDataSource(routingDatasource);
+    em.setPackagesToScan(new String[]{"ch.nblotti.chronos"});
+
+    JpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
+    em.setJpaVendorAdapter(vendorAdapter);
+    em.setJpaProperties(additionalProperties());
+
+    return em;
+  }
+
+  @Bean
+  public PlatformTransactionManager transactionManager(RoutingDataSource routingDatasource) {
+    JpaTransactionManager transactionManager = new JpaTransactionManager();
+    transactionManager.setEntityManagerFactory(entityManagerFactory(routingDatasource).getObject());
+
+    return transactionManager;
+  }
+
+  Properties additionalProperties() {
+    Properties properties = new Properties();
+    properties.setProperty("spring.h2.console.enabled", "false");
+    properties.setProperty("spring.jpa.hibernate.ddl-auto", "update");
+    properties.setProperty("spring.jpa.database-platform", "org.hibernate.dialect.H2Dialect");
+    properties.setProperty("hibernate.dialect", "org.hibernate.dialect.H2Dialect");
+
+
+    return properties;
+  }
+
+
+  @Override
+  public void run(String... args) throws Exception {
+
+    log.info("Starting State Machine");
+
+    StateMachine<STATES, EVENTS> stateMachine = stateMachine();
+
+
+    stateMachine.sendEvent(EVENTS.EVENT_RECEIVED);
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+
+    while (!stateMachine.isComplete()) {
+
+      System.out.print("> ");
+
+      String line = br.readLine().trim();
+
+      if (line.isEmpty()) {
+        continue;
+      }
+
+      if (line.toLowerCase().startsWith("exit")) {
+
+        break;
+      }
+    }
+
+
+    log.info("State Machine has stopped, quitting");
+
+  }
 }
