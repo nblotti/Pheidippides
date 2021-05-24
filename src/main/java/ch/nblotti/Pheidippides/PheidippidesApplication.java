@@ -1,6 +1,5 @@
 package ch.nblotti.Pheidippides;
 
-import ch.nblotti.Pheidippides.client.ClientDTO;
 import ch.nblotti.Pheidippides.database.RoutingDataSource;
 import ch.nblotti.Pheidippides.statemachine.EVENTS;
 import ch.nblotti.Pheidippides.statemachine.STATES;
@@ -8,38 +7,23 @@ import lombok.extern.slf4j.Slf4j;
 import org.I0Itec.zkclient.ZkClient;
 import org.I0Itec.zkclient.exception.ZkMarshallingError;
 import org.I0Itec.zkclient.serialize.ZkSerializer;
-import org.modelmapper.AbstractProvider;
 import org.modelmapper.ModelMapper;
-import org.modelmapper.Provider;
-import org.modelmapper.spring.SpringIntegration;
-import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration;
-import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
-import org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration;
-import org.springframework.boot.jdbc.DataSourceBuilder;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Scope;
+import org.springframework.context.event.EventListener;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
-import org.springframework.messaging.Message;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.JpaVendorAdapter;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
-import org.springframework.statemachine.StateContext;
 import org.springframework.statemachine.StateMachine;
-import org.springframework.statemachine.annotation.WithStateMachine;
 import org.springframework.statemachine.config.StateMachineFactory;
-import org.springframework.statemachine.listener.StateMachineListener;
-import org.springframework.statemachine.state.State;
-import org.springframework.statemachine.transition.Transition;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.annotation.PostConstruct;
@@ -53,11 +37,15 @@ import java.util.Properties;
 @SpringBootApplication(exclude = {
   FlywayAutoConfiguration.class})
 @Slf4j
-public class PheidippidesApplication implements CommandLineRunner {
+public class PheidippidesApplication {
 
   public static void main(String[] args) {
     SpringApplication.run(PheidippidesApplication.class, args);
+
   }
+
+
+
 
   @Value("${spring.zookeeper.connect-string}")
   private String connectString;
@@ -79,7 +67,7 @@ public class PheidippidesApplication implements CommandLineRunner {
   @Scope("singleton")
   public StateMachine<STATES, EVENTS> stateMachine() {
 
-    return stateMachineFactory.getStateMachine();
+    return  stateMachineFactory.getStateMachine();
 
   }
 
@@ -87,7 +75,7 @@ public class PheidippidesApplication implements CommandLineRunner {
   @Scope("singleton")
   ZkClient zkClient() {
 
-    return new ZkClient(connectString, 12000, 3000,zkSerializer() );
+    return new ZkClient(connectString, 12000, 3000, zkSerializer());
   }
 
   public ZkSerializer zkSerializer() {
@@ -132,16 +120,6 @@ public class PheidippidesApplication implements CommandLineRunner {
     return dataSource;
   }
 
-  /*
-    public DataSource createDefaultSource() {
-      DriverManagerDataSource dataSource = new DriverManagerDataSource();
-      dataSource.setDriverClassName(driver);
-      dataSource.setUrl(url);
-      dataSource.setUsername(username);
-      dataSource.setPassword(password);
-      return dataSource;
-    }
-  */
   @Bean
   @Scope("singleton")
   public RoutingDataSource routingDatasource() {
@@ -183,24 +161,9 @@ public class PheidippidesApplication implements CommandLineRunner {
     return properties;
   }
 
-
-  @Override
-  public void run(String... args) throws Exception {
-
-    log.info("Starting State Machine");
-
-    StateMachine<STATES, EVENTS> stateMachine = stateMachine();
-
-
-    stateMachine.sendEvent(EVENTS.EVENT_RECEIVED);
-    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-
-    while (!stateMachine.isComplete()){
-      Thread.sleep(500);
-    }
-
-
-    log.info("State Machine has stopped, quitting");
-
+  @EventListener(ApplicationReadyEvent.class)
+  public void doSomethingAfterStartup() {
+    stateMachine().sendEvent(EVENTS.EVENT_RECEIVED);
   }
+
 }

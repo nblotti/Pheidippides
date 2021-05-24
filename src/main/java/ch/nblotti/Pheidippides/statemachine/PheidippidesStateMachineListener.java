@@ -23,12 +23,6 @@ public class PheidippidesStateMachineListener {
     this.routingDataSource = routingDataSource;
   }
 
-  @StatesOnEntry(target = STATES.READY)
-  public void ready(StateMachine<STATES, EVENTS> stateMachine) {
-
-    stateMachine.sendEvent(EVENTS.SUCCESS);
-
-  }
 
   @StatesOnEntry(target = STATES.INIT_ZOOKEEPER)
   public void initZookeeper() {
