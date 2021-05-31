@@ -1,0 +1,15 @@
+package ch.nblotti.pheidippides.statemachine;
+
+public enum STATES {
+  READY,
+  INIT_ZOOKEEPER,
+  INIT_DATABASE,
+  INIT_STREAMS,
+  WAIT_FOR_EVENT,
+  TREATING_ZK_STRATEGIES_EVENT,
+  TREATING_ZK_DB_EVENT,
+  ERROR,
+  DONE,
+  CANCELED;
+
+}
