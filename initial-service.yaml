@@ -2,6 +2,11 @@ apiVersion: v1
 kind: Service
 metadata:
   name: nblotti-pheidippides
+  annotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/port: '8080'
+    prometheus.io/path: "/actuator/prometheus"
+    prometheus.io/scheme: "http"
 spec:
   selector:
     app: nblotti_pheidippides
@@ -10,3 +15,4 @@ spec:
     - protocol: TCP
       port: 8080
       targetPort: 8080
+

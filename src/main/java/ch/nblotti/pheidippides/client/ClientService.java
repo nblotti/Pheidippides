@@ -38,6 +38,7 @@ public class ClientService {
   public static final String CLIENT_DB_PASSWORD = CLIENTS + "/%s/db/dbPassword";
 
   public static final String CLIENT_STRATEGIES = CLIENTS + "/%s/strategies";
+  public static final String NEW_CLIENT = "newClient";
 
   private final ZkClient zkClient;
 
@@ -82,7 +83,7 @@ public class ClientService {
 
     Message<EVENTS> message = MessageBuilder
       .withPayload(events)
-      .setHeader("clientDTO", clientDTO)
+      .setHeader(NEW_CLIENT, clientDTO)
       .build();
 
     stateMachine.sendEvent(message);
@@ -215,7 +216,7 @@ public class ClientService {
       //le nombre de strategy ne se divise pas par le nombre de runner, le dernier va devoir prendre le delta.
       int reste = strategiesCount % allowedNode;
 
-      if (reste != 0) {
+      if (reste != 0 && windows !=0) {
 
         //est on le dernier ?
         if (position == (strategiesCount - reste) / windows) {

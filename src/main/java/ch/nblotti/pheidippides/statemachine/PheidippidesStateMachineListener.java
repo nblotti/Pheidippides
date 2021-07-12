@@ -3,88 +3,96 @@ package ch.nblotti.pheidippides.statemachine;
 import ch.nblotti.pheidippides.client.ClientDTO;
 import ch.nblotti.pheidippides.client.ClientService;
 import ch.nblotti.pheidippides.datasource.RoutingDataSource;
+import ch.nblotti.pheidippides.kafka.KafkaConnectManager;
+import ch.nblotti.pheidippides.kafka.KafkaStreamManager;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.statemachine.ExtendedState;
 import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.annotation.EventHeader;
 import org.springframework.statemachine.annotation.WithStateMachine;
 
 @WithStateMachine
 @Slf4j
+@AllArgsConstructor
 public class PheidippidesStateMachineListener {
 
-  private final ClientService clientService;
+    public static final String CURRENT_CLIENT = "currentClient";
+    private final ClientService clientService;
 
-  private final RoutingDataSource routingDataSource;
-
-  @Autowired
-  public PheidippidesStateMachineListener(ClientService clientService, RoutingDataSource routingDataSource) {
-    this.clientService = clientService;
-    this.routingDataSource = routingDataSource;
-  }
+    private final RoutingDataSource routingDataSource;
+    private final KafkaConnectManager kafkaConnectManager;
+    private final KafkaStreamManager kafkaStreamManager;
 
 
-  @StatesOnEntry(target = STATES.INIT_ZOOKEEPER)
-  public void initZookeeper() {
+    @StatesOnEntry(target = STATES.INIT_ZOOKEEPER)
+    public void initZookeeper() {
 
-    clientService.subscribe();
-  }
-
-  @StatesOnEntry(target = STATES.INIT_DATABASE)
-  public void initDatabase(StateMachine<STATES, EVENTS> stateMachine, @EventHeader ClientDTO clientDTO) {
-
-
-    try {
-      routingDataSource.createDataSource(clientDTO.getDbUrl(), clientDTO.getDbUser(), clientDTO.getDbPassword());
-    } catch (Exception e) {
-      stateMachine.sendEvent(EVENTS.ERROR);
-      return;
+        clientService.subscribe();
     }
 
-    stateMachine.sendEvent(EVENTS.SUCCESS);
-    log.info(String.format("Following client with id %s - managing %s strategies", clientDTO.getUserName(), clientDTO.getStrategies().size()));
-  }
+    @StatesOnEntry(target = STATES.INIT_DATABASE)
+    public void initDatabase(@EventHeader ClientDTO newClient) {
 
-  @StatesOnEntry(target = STATES.INIT_STREAMS)
-  public void initStreams(StateMachine<STATES, EVENTS> stateMachine) {
-    stateMachine.sendEvent(EVENTS.SUCCESS);
+        routingDataSource.createDataSource(newClient);
 
-  }
-
-
-  @StatesOnEntry(target = STATES.WAIT_FOR_EVENT)
-  public void waitForEvent(StateMachine<STATES, EVENTS> stateMachine) {
-
-
-  }
-
-  @StatesOnEntry(target = STATES.TREATING_ZK_STRATEGIES_EVENT)
-  public void treatingZKStrategiesEvent(StateMachine<STATES, EVENTS> stateMachine, @EventHeader ClientDTO clientDTO) {
-
-    stateMachine.sendEvent(EVENTS.EVENT_TREATED);
-    log.info(String.format("Change detected in followed client (id %s) - now managing %s strategies", clientDTO.getUserName(), clientDTO.getStrategies().size()));
-  }
-
-
-  @StatesOnEntry(target = STATES.TREATING_ZK_DB_EVENT)
-  public void treatingZKDBEvent(StateMachine<STATES, EVENTS> stateMachine, @EventHeader ClientDTO clientDTO) {
-
-    try {
-      routingDataSource.createDataSource(clientDTO.getDbUrl(), clientDTO.getDbUser(), clientDTO.getDbPassword());
-    } catch (Exception e) {
-      stateMachine.sendEvent(EVENTS.ERROR);
-      return;
+        log.info(String.format("Following client with id %s - managing %s strategies", newClient.getUserName(), newClient.getStrategies().size()));
     }
-    stateMachine.sendEvent(EVENTS.EVENT_TREATED);
-    log.info(String.format("Change detected in followed client (id %s) - now managing %s strategies", clientDTO.getUserName(), clientDTO.getStrategies().size()));
-  }
+
+    @StatesOnEntry(target = STATES.INIT_STREAMS)
+    public void initStreams(@EventHeader ClientDTO newClient, ExtendedState extendedState) {
+
+        extendedState.getVariables().put(CURRENT_CLIENT, newClient);
+        kafkaConnectManager.initMonthlyStockConnector(newClient);
+        kafkaStreamManager.doStartStream(newClient);
+
+    }
 
 
-  @StatesOnEntry(target = STATES.ERROR)
-  public void toError(StateMachine<STATES, EVENTS> stateMachine) {
-    log.info(String.format("Error, quitting"));
-    stateMachine.stop();
+    @StatesOnEntry(target = STATES.WAIT_FOR_EVENT)
+    public void waitForEvent(StateMachine<STATES, EVENTS> stateMachine) {
 
-  }
+
+    }
+
+    @StatesOnEntry(target = STATES.TREATING_ZK_STRATEGIES_EVENT)
+    public void treatingZKStrategiesEvent(StateMachine<STATES, EVENTS> stateMachine, @EventHeader ClientDTO newClient, ExtendedState extendedState) {
+
+        extendedState.getVariables().put(CURRENT_CLIENT, newClient);
+        stateMachine.sendEvent(EVENTS.EVENT_TREATED);
+        log.info(String.format("Change detected in followed client (id %s) - now managing %s strategies", newClient.getUserName(), newClient.getStrategies().size()));
+    }
+
+
+    @StatesOnEntry(target = STATES.TREATING_ZK_DB_EVENT)
+    public void treatingZKDBEvent(StateMachine<STATES, EVENTS> stateMachine, @EventHeader ClientDTO newClient, ExtendedState extendedState) {
+
+        try {
+            ClientDTO oldClient = (ClientDTO) extendedState.getVariables().get(CURRENT_CLIENT);
+            kafkaStreamManager.doCloseStream(oldClient);
+            kafkaConnectManager.deleteMonthlyStockConnector(oldClient);
+
+            routingDataSource.createDataSource(newClient);
+            kafkaConnectManager.initMonthlyStockConnector(newClient);
+            kafkaStreamManager.doStartStream(newClient);
+
+
+            extendedState.getVariables().put(CURRENT_CLIENT, newClient);
+        } catch (Exception e) {
+            stateMachine.sendEvent(EVENTS.ERROR);
+            return;
+        }
+        stateMachine.sendEvent(EVENTS.EVENT_TREATED);
+        log.info(String.format("Change detected in followed client (id %s) - now managing %s strategies", newClient.getUserName(), newClient.getStrategies().size()));
+    }
+
+
+    @StatesOnEntry(target = STATES.ERROR)
+    public void toError(StateMachine<STATES, EVENTS> stateMachine) {
+        log.info(String.format("Error, quitting"));
+        stateMachine.stop();
+
+    }
 
 }

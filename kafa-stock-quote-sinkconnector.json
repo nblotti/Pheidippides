@@ -1,0 +1,23 @@
+{
+  "name": "kafa-stock-quote-sinkconnector",
+  "config": {
+    "connector.class": "io.confluent.connect.jdbc.JdbcSinkConnector",
+    "tasks.max": "1",
+    "connection.url": "jdbc:postgresql://delosdb.coenmrmhbaiw.us-east-2.rds.amazonaws.com:5432/securities",
+    "topics": "stock_monthly_quote_filtred",
+    "connection.user": "nblotti",
+    "connection.password": "GUmRsnEjUmN2QRh3qQ0I",
+    "transforms": "unwrap",
+    "transforms.unwrap.type": "io.debezium.transforms.ExtractNewRecordState",
+    "transforms.unwrap.drop.tombstones":"false",
+    "table.name.format":"stock_monthly_quote",
+    "insert.mode": "upsert",
+    "delete.enabled": "true",
+    "pk.mode": "record_key",
+    "pk.fields": "id",
+    "value.converter":"org.apache.kafka.connect.json.JsonConverter",
+    "value.converter.schemas.enable": "true",
+    "key.converter":"org.apache.kafka.connect.json.JsonConverter",
+    "key.converter.schemas.enable": "true"
+  }
+}

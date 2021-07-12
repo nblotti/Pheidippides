@@ -24,8 +24,7 @@ CREATE TABLE ETF_WEEKLY
     TECHNOLOGY             double precision,
     CONSUMER_DEFENSIVE     double precision,
     HEALTHCARE             double precision,
-    UTILITIES              double precision,
-
+    UTILITIES              double precision
 );
 
 drop table IF EXISTS ETF_MONTHLY CASCADE;
@@ -54,7 +53,6 @@ CREATE TABLE ETF_MONTHLY
     TECHNOLOGY             double precision,
     CONSUMER_DEFENSIVE     double precision,
     HEALTHCARE             double precision,
-    UTILITIES              double precision,
-
+    UTILITIES              double precision
 );
 

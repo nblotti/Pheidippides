@@ -1,12 +1,17 @@
 package ch.nblotti.pheidippides;
 
 import ch.nblotti.pheidippides.datasource.RoutingDataSource;
+import ch.nblotti.pheidippides.kafka.KafkaStreamManager;
+import ch.nblotti.pheidippides.kafka.PheidippidesMonthlyTopology;
+import ch.nblotti.pheidippides.kafka.quote.MonthlyQuoteFilter;
 import ch.nblotti.pheidippides.statemachine.EVENTS;
 import ch.nblotti.pheidippides.statemachine.STATES;
 import lombok.extern.slf4j.Slf4j;
 import org.I0Itec.zkclient.ZkClient;
 import org.I0Itec.zkclient.exception.ZkMarshallingError;
 import org.I0Itec.zkclient.serialize.ZkSerializer;
+import org.apache.kafka.streams.StreamsBuilder;
+import org.apache.kafka.streams.Topology;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,6 +22,7 @@ import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Scope;
 import org.springframework.context.event.EventListener;
@@ -28,9 +34,11 @@ import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.config.StateMachineFactory;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.web.client.RestTemplate;
 
 import javax.sql.DataSource;
 import java.io.UnsupportedEncodingException;
+import java.time.Duration;
 import java.time.format.DateTimeFormatter;
 import java.util.Properties;
 
@@ -49,7 +57,9 @@ public class PheidippidesApplication {
 
 
     @Value("${spring.zookeeper.connect-string}")
-    private String connectString;
+    private String zkConnectString;
+
+
 
     @Value("${global.full-date-format}")
     public String messageDateFormat;
@@ -81,7 +91,7 @@ public class PheidippidesApplication {
     @Scope("singleton")
     ZkClient zkClient() {
 
-        return new ZkClient(connectString, 12000, 3000, zkSerializer());
+        return new ZkClient(zkConnectString, 12000, 10000, zkSerializer());
     }
 
     public ZkSerializer zkSerializer() {
@@ -109,13 +119,7 @@ public class PheidippidesApplication {
         };
     }
 
-    @Bean
-    ModelMapper modelMapper() {
-        return new ModelMapper();
-    }
-
-
-    @Bean
+      @Bean
     public DataSource createDefaultSource() {
         DriverManagerDataSource dataSource = new DriverManagerDataSource();
         dataSource.setDriverClassName("org.h2.Driver");
@@ -128,9 +132,9 @@ public class PheidippidesApplication {
 
     @Bean
     @Scope("singleton")
-    public RoutingDataSource routingDatasource() {
+    public RoutingDataSource routingDatasource(StateMachine<STATES, EVENTS> stateMachine) {
 
-        return new RoutingDataSource(createDefaultSource());
+        return new RoutingDataSource(createDefaultSource(), stateMachine);
 
     }
 
@@ -170,6 +174,17 @@ public class PheidippidesApplication {
     @EventListener(ApplicationReadyEvent.class)
     public void doSomethingAfterStartup() {
         stateMachine().sendEvent(EVENTS.EVENT_RECEIVED);
+    }
+
+    @Bean
+    public RestTemplate restTemplate(RestTemplateBuilder restTemplateBuilder) {
+
+
+        RestTemplate restTemplate = restTemplateBuilder
+                .setConnectTimeout(Duration.ofSeconds(30))
+                .setReadTimeout(Duration.ofMinutes(5))
+                .build();
+        return restTemplate;
     }
 
 }
