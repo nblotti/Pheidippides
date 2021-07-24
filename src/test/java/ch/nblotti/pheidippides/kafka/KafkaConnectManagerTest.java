@@ -1,24 +1,18 @@
 package ch.nblotti.pheidippides.kafka;
 
 import ch.nblotti.pheidippides.client.ClientDTO;
-import ch.nblotti.pheidippides.kafka.quote.Quote;
 import org.junit.Assert;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
-import org.mockito.Matchers;
-import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpServerErrorException;
-import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
@@ -32,7 +26,7 @@ class KafkaConnectManagerTest {
     String weeklyConnectPayload = "";
     String monthlyConnectPayload = "{\"name\": \"%s-postgres-stock_monthly_quote-sink\",\"config\": {\"connector.class\": \"io.confluent.connect.jdbc.JdbcSinkConnector\",\"tasks.max\": \"1\",\"connection.url\": \"%s\",\"topics\": \"stock_monthly_quote_filtred\",\"connection.user\": \"%s\",\"connection.password\": \"%s\",\"transforms\": \"unwrap\",\"transforms.unwrap.type\": \"io.debezium.transforms.ExtractNewRecordState\",\"transforms.unwrap.drop.tombstones\":\"false\",\"table.name.format\":\"stock_monthly_quote\",\"insert.mode\": \"upsert\",\"delete.enabled\": \"true\",\"pk.mode\": \"record_key\",\"pk.fields\": \"id\",\"value.converter\":\"org.apache.kafka.connect.json.JsonConverter\",\"value.converter.schemas.enable\": \"true\",\"key.converter\":\"org.apache.kafka.connect.json.JsonConverter\",\"key.converter.schemas.enable\": \"true\"}}";
     String monthlyQuoteTopic = "stock_monthly_quote";
-    KafkaConnectManager kafkaConnectManager = new KafkaConnectManager(restTemplate, connectorMonthlyQuoteUrl, connectorUrl, weeklyConnectPayload, monthlyConnectPayload, monthlyQuoteTopic);
+    KafkaConnectManager kafkaConnectManager = new KafkaConnectManager(restTemplate, connectorMonthlyQuoteUrl, connectorUrl, monthlyConnectPayload, monthlyQuoteTopic);
 
     @Test
     void buildConnnectorPayload() {
@@ -66,7 +60,7 @@ class KafkaConnectManagerTest {
         when(restTemplate.getForEntity(connectorMonthlyQuoteUrl, String.class)).thenReturn(responseEntity);
 
 
-        ResponseEntity<String> returned = kafkaConnectManager.initMonthlyStockConnector(clientDTO);
+        ResponseEntity<String> returned = kafkaConnectManager.initStockConnector(clientDTO);
 
         assertEquals(responseEntity, returned);
 
@@ -94,7 +88,7 @@ class KafkaConnectManagerTest {
                 .thenReturn(ok);
 
 
-        ResponseEntity<String> returned = kafkaConnectManager.initMonthlyStockConnector(clientDTO);
+        ResponseEntity<String> returned = kafkaConnectManager.initStockConnector(clientDTO);
 
 
         assertEquals(returned, ok);

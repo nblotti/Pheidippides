@@ -14,27 +14,26 @@ import java.util.Collections;
 public class KafkaConnectManager {
 
     RestTemplate restTemplate;
-    private final String connectorMonthlyQuoteUrl;
+    private final String connectorQuoteUrl;
     public String connectorUrl;
-    private String weeklyConnectPayload;
-    private String monthlyConnectPayload;
-    public String monthlyQuoteTopic;
+    private String connectPayload;
+    private String quoteTopicFiltred;
 
 
-    public ResponseEntity<String> initMonthlyStockConnector(ClientDTO clientDTO) {
+    public ResponseEntity<String> initStockConnector(ClientDTO clientDTO) {
 
-        String formatedMonthlyConnectPayload = buildConnnectorPayload(clientDTO);
+        String formatedConnectPayload = buildConnnectorPayload(clientDTO);
 
-        String formatedConnectorMonthlyQuoteUrl = String.format(connectorMonthlyQuoteUrl, clientDTO.getUserName());
+        String formatedConnectorQuoteUrl = String.format(connectorQuoteUrl, clientDTO.getUserName());
 
         HttpHeaders headers = new HttpHeaders();
         headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        HttpEntity<String> entity = new HttpEntity<>(formatedMonthlyConnectPayload, headers);
+        HttpEntity<String> entity = new HttpEntity<>(formatedConnectPayload, headers);
 
         try {
-            return restTemplate.getForEntity(formatedConnectorMonthlyQuoteUrl, String.class);
+            return restTemplate.getForEntity(formatedConnectorQuoteUrl, String.class);
 
         } catch (HttpStatusCodeException exception) {
             return restTemplate.exchange(connectorUrl, HttpMethod.POST, entity, String.class);
@@ -42,8 +41,8 @@ public class KafkaConnectManager {
 
     }
 
-    public void deleteMonthlyStockConnector(ClientDTO clientDTO) {
-        String formatedConnectorMonthlyQuoteUrl = String.format(connectorMonthlyQuoteUrl, clientDTO.getUserName());
+    public void deleteStockConnector(ClientDTO clientDTO) {
+        String formatedConnectorMonthlyQuoteUrl = String.format(connectorQuoteUrl, clientDTO.getUserName());
         try {
             restTemplate.delete(formatedConnectorMonthlyQuoteUrl);
 
@@ -55,7 +54,7 @@ public class KafkaConnectManager {
 
 
     String buildConnnectorPayload(ClientDTO clientDTO) {
-        String weeklyFullPayload = String.format(monthlyConnectPayload, clientDTO.getUserName(), clientDTO.getDbUrl(), clientDTO.getDbUser(), clientDTO.getDbPassword());
+        String weeklyFullPayload = String.format(connectPayload, clientDTO.getUserName(), clientDTO.getDbUrl(), clientDTO.getUserName(),clientDTO.getDbUser(), clientDTO.getDbPassword());
         return weeklyFullPayload;
     }
 

@@ -1,18 +1,12 @@
 package ch.nblotti.pheidippides;
 
 import ch.nblotti.pheidippides.datasource.RoutingDataSource;
-import ch.nblotti.pheidippides.kafka.KafkaStreamManager;
-import ch.nblotti.pheidippides.kafka.PheidippidesMonthlyTopology;
-import ch.nblotti.pheidippides.kafka.quote.MonthlyQuoteFilter;
 import ch.nblotti.pheidippides.statemachine.EVENTS;
 import ch.nblotti.pheidippides.statemachine.STATES;
 import lombok.extern.slf4j.Slf4j;
 import org.I0Itec.zkclient.ZkClient;
 import org.I0Itec.zkclient.exception.ZkMarshallingError;
 import org.I0Itec.zkclient.serialize.ZkSerializer;
-import org.apache.kafka.streams.StreamsBuilder;
-import org.apache.kafka.streams.Topology;
-import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;

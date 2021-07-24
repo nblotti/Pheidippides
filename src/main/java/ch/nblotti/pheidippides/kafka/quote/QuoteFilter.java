@@ -1,6 +1,6 @@
 package ch.nblotti.pheidippides.kafka.quote;
 
-public interface QuoteFilter {
+public interface QuoteFilter<S, T> {
 
-    public boolean filter(byte[] key,byte[] value);
+    public boolean filter(S key, T value);
 }

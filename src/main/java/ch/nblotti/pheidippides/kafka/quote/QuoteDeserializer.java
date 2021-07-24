@@ -3,14 +3,15 @@ package ch.nblotti.pheidippides.kafka.quote;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.common.serialization.Deserializer;
 
 import java.io.IOException;
 
 @Slf4j
-public class QuoteDeserializer {
+public class QuoteDeserializer implements Deserializer<QuoteWrapper> {
+
 
     public static final String AFTER = "after";
-    public static final String EXCHANGE = "exchange";
     public static final String OP = "op";
     public static final String PAYLOAD = "payload";
     public static final String CODE = "code";
@@ -18,26 +19,28 @@ public class QuoteDeserializer {
     private JsonNode payload;
 
 
-    public Quote deserialize(byte[] key, byte[] value) {
+    @Override
+    public QuoteWrapper deserialize(String s, byte[] in) {
 
-        Quote quote = new Quote();
+
+        QuoteWrapper quote = new QuoteWrapper();
+        quote.setIn(in);
 
         try {
 
-            if (value == null)
+            if (in == null)
                 quote.setOperation(SQL_OPERATION.EMPTY);
             else {
-                payload = mapper.readTree(value).get(PAYLOAD);
+                payload = mapper.readTree(in).get(PAYLOAD);
                 SQL_OPERATION operation = SQL_OPERATION.fromString(payload.get(OP).asText());
 
                 quote.setOperation(operation);
 
                 if (!operation.equals(SQL_OPERATION.DELETE)) {
-                    String exchange = payload.get(AFTER).get(EXCHANGE).asText();
                     String code = payload.get(AFTER).get(CODE).asText();
-                    quote.setExchange(exchange);
                     quote.setCode(code);
                 }
+
             }
         } catch (IOException | NullPointerException |
                 IllegalStateException e) {
@@ -47,4 +50,5 @@ public class QuoteDeserializer {
 
         return quote;
     }
+
 }

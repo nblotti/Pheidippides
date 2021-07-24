@@ -6,18 +6,21 @@ import ch.nblotti.pheidippides.statemachine.STATES;
 import io.apicurio.registry.utils.serde.AbstractKafkaSerDe;
 import io.apicurio.registry.utils.serde.JsonSchemaKafkaSerializer;
 import io.apicurio.registry.utils.serde.JsonSchemaSerDeConstants;
-import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsConfig;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.statemachine.StateMachine;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 @Slf4j
@@ -25,19 +28,26 @@ import java.util.Properties;
 public class KafkaStreamManager {
 
 
+    public static final String STOCK_MONTHLY_QUOTE = "stock_monthly_quote";
+    public static final String INTERNAL_MAP = "%s_internal_map";
+    public static final String INTERNAL_TRANSFORMED = "%s_internal_transformed";
+
     @NonNull
     StateMachine<STATES, EVENTS> stateMachine;
 
 
     @NonNull
-    PheidippidesMonthlyTopology pheidippidesMonthlyTopology;
+    PheidippidesTopology pheidippidesTopology;
 
     @NonNull
-    @Value("${spring.kafka.connect-string}")
     private String kafkaConnectString;
+
     @NonNull
-    @Value("${apicurio.registry.url}")
+    public String userSubscriptionTopic;
+
+    @NonNull
     private String apicurioRegistryUrl;
+
 
     private KafkaStreams streams;
 
@@ -47,7 +57,7 @@ public class KafkaStreamManager {
         if (streams == null || streams.state() == KafkaStreams.State.NOT_RUNNING) {
 
             Properties properties = initStreamConfig(clientDTO.getUserName());
-            start(properties);
+            start(properties, clientDTO);
             this.stateMachine.sendEvent(EVENTS.SUCCESS);
         } else {
             log.info("Stream already running !");
@@ -56,17 +66,47 @@ public class KafkaStreamManager {
 
     }
 
-    public void doCloseStream(ClientDTO clientDTO)  {
+    public void doCloseStream(ClientDTO clientDTO) {
 
         streams.close();
     }
 
 
+    private void createTopic(Properties streamsConfiguration, String internalMapTopicName, String internalTransformedTopicName, String userSubscriptionTopicName) {
 
-        private void start(Properties streamsConfiguration) {
+
+        AdminClient client = AdminClient.create(streamsConfiguration);
+
+        List<NewTopic> topics = new ArrayList<>();
+        topics.add(new NewTopic(STOCK_MONTHLY_QUOTE,
+                Integer.parseInt("1"),
+                Short.parseShort("1")));
+        topics.add(new NewTopic(internalMapTopicName,
+                Integer.parseInt("1"),
+                Short.parseShort("1")));
+        topics.add(new NewTopic(internalTransformedTopicName,
+                Integer.parseInt("1"),
+                Short.parseShort("1")));
+        topics.add(new NewTopic(userSubscriptionTopicName,
+                Integer.parseInt("1"),
+                Short.parseShort("1")));
+
+        client.createTopics(topics);
+        client.close();
+    }
 
 
-        streams = new KafkaStreams(pheidippidesMonthlyTopology.getTopology(), streamsConfiguration);
+    private void start(Properties streamsConfiguration, ClientDTO clientDTO) {
+
+        //Topic initialisation
+
+        String internalMapTopicName = String.format(INTERNAL_MAP, clientDTO.getUserName());
+        String internalTransformedTopicName = String.format(INTERNAL_TRANSFORMED, clientDTO.getUserName());
+        String userSubscriptionTopicName = String.format(userSubscriptionTopic, clientDTO.getUserName());
+
+        createTopic(streamsConfiguration, internalMapTopicName, internalTransformedTopicName, userSubscriptionTopicName);
+
+        streams = new KafkaStreams(pheidippidesTopology.getTopology(clientDTO, streamsConfiguration, internalMapTopicName, internalTransformedTopicName, userSubscriptionTopicName), streamsConfiguration);
         Runtime.getRuntime().addShutdownHook(new Thread(streams::close));
         streams.start();
 
@@ -82,10 +122,10 @@ public class KafkaStreamManager {
         streamsConfiguration.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaConnectString);
         streamsConfiguration.put(AbstractKafkaSerDe.REGISTRY_URL_CONFIG_PARAM, apicurioRegistryUrl);
 
-        streamsConfiguration.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, JsonSchemaKafkaSerializer.class.getName());
-        streamsConfiguration.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSchemaKafkaSerializer.class.getName());
+        streamsConfiguration.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
+        streamsConfiguration.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass());
 
-        streamsConfiguration.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, JsonSchemaKafkaSerializer.class.getName());
+        streamsConfiguration.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSchemaKafkaSerializer.class.getName());
         streamsConfiguration.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonSchemaKafkaSerializer.class.getName());
         streamsConfiguration.put(JsonSchemaSerDeConstants.REGISTRY_JSON_SCHEMA_VALIDATION_ENABLED, "true");
 

@@ -7,7 +7,6 @@ import ch.nblotti.pheidippides.kafka.KafkaConnectManager;
 import ch.nblotti.pheidippides.kafka.KafkaStreamManager;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.statemachine.ExtendedState;
 import org.springframework.statemachine.StateMachine;
 import org.springframework.statemachine.annotation.EventHeader;
@@ -44,7 +43,7 @@ public class PheidippidesStateMachineListener {
     public void initStreams(@EventHeader ClientDTO newClient, ExtendedState extendedState) {
 
         extendedState.getVariables().put(CURRENT_CLIENT, newClient);
-        kafkaConnectManager.initMonthlyStockConnector(newClient);
+        kafkaConnectManager.initStockConnector(newClient);
         kafkaStreamManager.doStartStream(newClient);
 
     }
@@ -71,10 +70,10 @@ public class PheidippidesStateMachineListener {
         try {
             ClientDTO oldClient = (ClientDTO) extendedState.getVariables().get(CURRENT_CLIENT);
             kafkaStreamManager.doCloseStream(oldClient);
-            kafkaConnectManager.deleteMonthlyStockConnector(oldClient);
+            kafkaConnectManager.deleteStockConnector(oldClient);
 
             routingDataSource.createDataSource(newClient);
-            kafkaConnectManager.initMonthlyStockConnector(newClient);
+            kafkaConnectManager.initStockConnector(newClient);
             kafkaStreamManager.doStartStream(newClient);
 
 

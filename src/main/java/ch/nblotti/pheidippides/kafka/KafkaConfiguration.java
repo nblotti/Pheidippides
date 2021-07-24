@@ -1,11 +1,8 @@
 package ch.nblotti.pheidippides.kafka;
 
-import ch.nblotti.pheidippides.kafka.quote.MonthlyQuoteFilter;
-import ch.nblotti.pheidippides.kafka.quote.QuoteDeserializer;
 import ch.nblotti.pheidippides.statemachine.EVENTS;
 import ch.nblotti.pheidippides.statemachine.STATES;
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -33,47 +30,35 @@ public class KafkaConfiguration {
     RestTemplate restTemplate;
 
     @Value("${app.kafka.connectors.stock.monthly.quote.url}")
-    public String connectorMonthlyQuoteUrl;
+    public String connectorQuoteUrl;
     @Value("${app.kafka.connect.url}")
     public String connectorUrl;
-    @Value("${app.connector.payload.stock_weekly}")
-    private String weeklyConnectPayload;
     @Value("${app.connector.payload.stock_monthly}")
-    private String monthlyConnectPayload;
-
-    @Value("${app.stock_monthly_table}")
-    public String monthlyQuoteTopic;
+    private String connectPayload;
 
 
-    @Bean
-    MonthlyQuoteFilter monthlyQuoteFilter(QuoteDeserializer quoteDeserializer) {
-
-        return new MonthlyQuoteFilter(quoteDeserializer);
-    }
-
-    @Bean
-    QuoteDeserializer quoteDeserializer() {
-        return new QuoteDeserializer();
-    }
+    @Value("${app.user_quote_subscription_table}")
+    public String userSubscriptionTopic;
 
 
     @Bean
     KafkaConnectManager kafkaConnectManager(RestTemplate restTemplate) {
-        return new KafkaConnectManager(restTemplate, connectorMonthlyQuoteUrl, connectorUrl, weeklyConnectPayload, monthlyConnectPayload, monthlyQuoteTopic);
+        return new KafkaConnectManager(restTemplate, connectorQuoteUrl, connectorUrl, connectPayload, quoteTopicFiltred);
     }
 
     @Bean
-    PheidippidesMonthlyTopology pheidippidesMonthlyTopology(MonthlyQuoteFilter monthlyQuoteFilter) {
+    PheidippidesTopology pheidippidesTopology() {
 
-        return new PheidippidesMonthlyTopology(monthlyQuoteFilter, quoteTopic, quoteTopicFiltred);
+
+        return new PheidippidesTopology(quoteTopic, quoteTopicFiltred, userSubscriptionTopic);
     }
 
 
     @Bean
     @Scope("singleton")
-    KafkaStreamManager kafkaStreamManager(StateMachine<STATES, EVENTS> stateMachine, PheidippidesMonthlyTopology pheidippidesMonthlyTopology) {
+    KafkaStreamManager kafkaStreamManager(StateMachine<STATES, EVENTS> stateMachine, PheidippidesTopology pheidippidesTopology) {
 
-        return new KafkaStreamManager(stateMachine, pheidippidesMonthlyTopology, kafkaConnectString, apicurioRegistryUrl);
+        return new KafkaStreamManager(stateMachine, pheidippidesTopology, kafkaConnectString, userSubscriptionTopic, apicurioRegistryUrl);
     }
 
 

@@ -1,8 +1,8 @@
 package ch.nblotti.pheidippides.kafka;
 
-import ch.nblotti.pheidippides.kafka.quote.MonthlyQuoteFilter;
-import ch.nblotti.pheidippides.kafka.quote.Quote;
 import ch.nblotti.pheidippides.kafka.quote.QuoteDeserializer;
+import ch.nblotti.pheidippides.kafka.quote.QuoteFilterImpl;
+import ch.nblotti.pheidippides.kafka.quote.QuoteWrapper;
 import ch.nblotti.pheidippides.kafka.quote.SQL_OPERATION;
 import org.junit.Assert;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,32 +16,32 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
 
-public class MonthlyQuoteFilterTest {
+public class MonthlyQuoteFilterImplTest {
 
 
     @Mock
     QuoteDeserializer quoteDeserializer;
 
-    private MonthlyQuoteFilter monthlyQuoteFilter;
+    private QuoteFilterImpl quoteFilterImpl;
 
 
     @BeforeEach
     void beforeEach() {
 
         MockitoAnnotations.openMocks(this);
-        monthlyQuoteFilter = new MonthlyQuoteFilter(quoteDeserializer);
+        quoteFilterImpl = new QuoteFilterImpl();
 
     }
 
     @Test
     public void filterEmptyEntry() {
 
-        Quote quote = Mockito.mock(Quote.class);
+        QuoteWrapper quote = Mockito.mock(QuoteWrapper.class);
         when(quote.getOperation()).thenReturn(SQL_OPERATION.EMPTY);
 
         doReturn(quote).when(quoteDeserializer).deserialize(any(), any());
 
-        boolean returned = monthlyQuoteFilter.filter(null, null);
+        boolean returned = quoteFilterImpl.filter(null, null);
 
         Assert.assertTrue(returned);
     }
@@ -49,12 +49,12 @@ public class MonthlyQuoteFilterTest {
     @Test
     public void filterErrorEntry() {
 
-        Quote quote = Mockito.mock(Quote.class);
+        QuoteWrapper quote = Mockito.mock(QuoteWrapper.class);
         when(quote.getOperation()).thenReturn(SQL_OPERATION.ERROR);
 
         doReturn(quote).when(quoteDeserializer).deserialize(any(), any());
 
-        boolean returned = monthlyQuoteFilter.filter(null, null);
+        boolean returned = quoteFilterImpl.filter(null, null);
 
         Assert.assertFalse(returned);
     }
@@ -62,24 +62,24 @@ public class MonthlyQuoteFilterTest {
     @Test
     public void filterDeleteEntry() {
 
-        Quote quote = Mockito.mock(Quote.class);
+        QuoteWrapper quote = Mockito.mock(QuoteWrapper.class);
         when(quote.getOperation()).thenReturn(SQL_OPERATION.DELETE);
 
         doReturn(quote).when(quoteDeserializer).deserialize(any(), any());
 
-        boolean returned = monthlyQuoteFilter.filter(null, null);
+        boolean returned = quoteFilterImpl.filter(null, null);
 
         Assert.assertTrue(returned);
     }
 
     public void filterReadEntry() {
 
-        Quote quote = Mockito.mock(Quote.class);
+        QuoteWrapper quote = Mockito.mock(QuoteWrapper.class);
         when(quote.getOperation()).thenReturn(SQL_OPERATION.READ);
 
         doReturn(quote).when(quoteDeserializer).deserialize(any(), any());
 
-        boolean returned = monthlyQuoteFilter.filter(null, null);
+        boolean returned = quoteFilterImpl.filter(null, null);
 
         Assert.assertFalse(returned);
     }

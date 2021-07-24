@@ -1,6 +1,6 @@
 package ch.nblotti.pheidippides.kafka;
 
-import ch.nblotti.pheidippides.kafka.quote.MonthlyQuoteFilter;
+import ch.nblotti.pheidippides.kafka.quote.QuoteFilterImpl;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.*;
 import org.junit.Assert;
@@ -17,16 +17,17 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 
 
-class PheidippidesMonthlyTopologyTest {
+class PheidippidesTopologyTest {
 
 
     public String monthlyQuoteTopic = "monthlyQuoteTopic";
     public String monthlyQuoteTopicFiltred = "monthlyQuoteTopicFiltred";
+    public String userSubscriptionTopic = "userSubscriptionTopic";
 
     TopologyTestDriver testDriver;
 
     @Mock
-    MonthlyQuoteFilter quoteFilter;
+    QuoteFilterImpl quoteFilter;
 
 
     @BeforeEach
@@ -34,9 +35,9 @@ class PheidippidesMonthlyTopologyTest {
 
         MockitoAnnotations.openMocks(this);
 
-        PheidippidesMonthlyTopology pheidippidesMonthlyTopology = new PheidippidesMonthlyTopology(quoteFilter, monthlyQuoteTopic, monthlyQuoteTopicFiltred);
+        PheidippidesTopology pheidippidesTopology = new PheidippidesTopology( monthlyQuoteTopic, monthlyQuoteTopicFiltred,userSubscriptionTopic);
 
-        Topology topology = pheidippidesMonthlyTopology.getTopology();
+        Topology topology = pheidippidesTopology.getTopology(null,null,null,null,null);
         testDriver = new TopologyTestDriver(topology);
 
     }
