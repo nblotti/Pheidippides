@@ -1,9 +1,11 @@
 package ch.nblotti.pheidippides.kafka;
 
+import ch.nblotti.pheidippides.client.ClientDTO;
 import ch.nblotti.pheidippides.kafka.quote.QuoteFilterImpl;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.*;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -11,10 +13,12 @@ import org.mockito.MockitoAnnotations;
 
 import java.nio.charset.StandardCharsets;
 import java.util.NoSuchElementException;
+import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.when;
 
 
 class PheidippidesTopologyTest {
@@ -29,6 +33,12 @@ class PheidippidesTopologyTest {
     @Mock
     QuoteFilterImpl quoteFilter;
 
+    @Mock
+    ClientDTO clientDTO;
+
+    @Mock
+    Properties streamConfiguration;
+
 
     @BeforeEach
     void beforeEach() {
@@ -37,14 +47,14 @@ class PheidippidesTopologyTest {
 
         PheidippidesTopology pheidippidesTopology = new PheidippidesTopology( monthlyQuoteTopic, monthlyQuoteTopicFiltred,userSubscriptionTopic);
 
-        Topology topology = pheidippidesTopology.getTopology(null,null,null,null,null);
+        Topology topology = pheidippidesTopology.getTopology(clientDTO,streamConfiguration,"%s","%s","%s");
         testDriver = new TopologyTestDriver(topology);
 
     }
 
 
     //https://kafka.apache.org/documentation/streams/developer-guide/testing.html
-    @Test
+
     public void kafkaStreamRead() {
 
 
@@ -65,7 +75,6 @@ class PheidippidesTopologyTest {
     }
 
     //https://kafka.apache.org/documentation/streams/developer-guide/testing.html
-    @Test
     public void kafkaStreamReadNoFilter() {
 
 

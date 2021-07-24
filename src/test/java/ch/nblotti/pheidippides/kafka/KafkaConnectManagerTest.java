@@ -21,12 +21,11 @@ class KafkaConnectManagerTest {
 
     RestTemplate restTemplate = Mockito.mock(RestTemplate.class);
 
-    String connectorMonthlyQuoteUrl = "http://kafka1:8083/connectors/";
+    String connectorquoteUrl = "http://kafka1:8083/connectors/";
     String connectorUrl = "kafka1:9092,kafka3:9092";
-    String weeklyConnectPayload = "";
-    String monthlyConnectPayload = "{\"name\": \"%s-postgres-stock_monthly_quote-sink\",\"config\": {\"connector.class\": \"io.confluent.connect.jdbc.JdbcSinkConnector\",\"tasks.max\": \"1\",\"connection.url\": \"%s\",\"topics\": \"stock_monthly_quote_filtred\",\"connection.user\": \"%s\",\"connection.password\": \"%s\",\"transforms\": \"unwrap\",\"transforms.unwrap.type\": \"io.debezium.transforms.ExtractNewRecordState\",\"transforms.unwrap.drop.tombstones\":\"false\",\"table.name.format\":\"stock_monthly_quote\",\"insert.mode\": \"upsert\",\"delete.enabled\": \"true\",\"pk.mode\": \"record_key\",\"pk.fields\": \"id\",\"value.converter\":\"org.apache.kafka.connect.json.JsonConverter\",\"value.converter.schemas.enable\": \"true\",\"key.converter\":\"org.apache.kafka.connect.json.JsonConverter\",\"key.converter.schemas.enable\": \"true\"}}";
-    String monthlyQuoteTopic = "stock_monthly_quote";
-    KafkaConnectManager kafkaConnectManager = new KafkaConnectManager(restTemplate, connectorMonthlyQuoteUrl, connectorUrl, monthlyConnectPayload, monthlyQuoteTopic);
+    String monthlyCc = "{\"name\": \"%s-postgres-stock_monthly_quote-sink\",\"config\": {\"connector.class\": \"io.confluent.connect.jdbc.JdbcSinkConnector\",\"tasks.max\": \"1\",\"connection.url\": \"%s\",\"topics\": \"%s_stock_monthly_quote_filtred\",\"connection.user\": \"%s\",\"connection.password\": \"%s\",\"transforms\": \"unwrap\",\"transforms.unwrap.type\": \"io.debezium.transforms.ExtractNewRecordState\",\"transforms.unwrap.drop.tombstones\":\"false\",\"table.name.format\":\"stock_monthly_quote\",\"insert.mode\": \"upsert\",\"delete.enabled\": \"true\",\"pk.mode\": \"record_key\",\"pk.fields\": \"id\",\"value.converter\":\"org.apache.kafka.connect.json.JsonConverter\",\"value.converter.schemas.enable\": \"true\",\"key.converter\":\"org.apache.kafka.connect.json.JsonConverter\",\"key.converter.schemas.enable\": \"true\"}}";
+    String quoteTopic = "stock_monthly_quote";
+    KafkaConnectManager kafkaConnectManager = new KafkaConnectManager(restTemplate, connectorquoteUrl, connectorUrl, monthlyCc, quoteTopic);
 
     @Test
     void buildConnnectorPayload() {
@@ -41,7 +40,7 @@ class KafkaConnectManagerTest {
 
         String returned = kafkaConnectManager.buildConnnectorPayload(clientDTO);
 
-        Assert.assertEquals(returned, "{\"name\": \"client1-postgres-stock_monthly_quote-sink\",\"config\": {\"connector.class\": \"io.confluent.connect.jdbc.JdbcSinkConnector\",\"tasks.max\": \"1\",\"connection.url\": \"jdbc:postgresql://delosdb.coenmrmhbaiw.us-east-2.rds.amazonaws.com:5432/securities\",\"topics\": \"stock_monthly_quote_filtred\",\"connection.user\": \"postgres\",\"connection.password\": \"postgres\",\"transforms\": \"unwrap\",\"transforms.unwrap.type\": \"io.debezium.transforms.ExtractNewRecordState\",\"transforms.unwrap.drop.tombstones\":\"false\",\"table.name.format\":\"stock_monthly_quote\",\"insert.mode\": \"upsert\",\"delete.enabled\": \"true\",\"pk.mode\": \"record_key\",\"pk.fields\": \"id\",\"value.converter\":\"org.apache.kafka.connect.json.JsonConverter\",\"value.converter.schemas.enable\": \"true\",\"key.converter\":\"org.apache.kafka.connect.json.JsonConverter\",\"key.converter.schemas.enable\": \"true\"}}");
+        Assert.assertEquals(returned, "{\"name\": \"client1-postgres-stock_monthly_quote-sink\",\"config\": {\"connector.class\": \"io.confluent.connect.jdbc.JdbcSinkConnector\",\"tasks.max\": \"1\",\"connection.url\": \"jdbc:postgresql://delosdb.coenmrmhbaiw.us-east-2.rds.amazonaws.com:5432/securities\",\"topics\": \"client1_stock_monthly_quote_filtred\",\"connection.user\": \"postgres\",\"connection.password\": \"postgres\",\"transforms\": \"unwrap\",\"transforms.unwrap.type\": \"io.debezium.transforms.ExtractNewRecordState\",\"transforms.unwrap.drop.tombstones\":\"false\",\"table.name.format\":\"stock_monthly_quote\",\"insert.mode\": \"upsert\",\"delete.enabled\": \"true\",\"pk.mode\": \"record_key\",\"pk.fields\": \"id\",\"value.converter\":\"org.apache.kafka.connect.json.JsonConverter\",\"value.converter.schemas.enable\": \"true\",\"key.converter\":\"org.apache.kafka.connect.json.JsonConverter\",\"key.converter.schemas.enable\": \"true\"}}");
 
     }
 
@@ -57,7 +56,7 @@ class KafkaConnectManagerTest {
         when(clientDTO.getDbUrl()).thenReturn("jdbc:postgresql://delosdb.coenmrmhbaiw.us-east-2.rds.amazonaws.com:5432/securities");
 
 
-        when(restTemplate.getForEntity(connectorMonthlyQuoteUrl, String.class)).thenReturn(responseEntity);
+        when(restTemplate.getForEntity(connectorquoteUrl, String.class)).thenReturn(responseEntity);
 
 
         ResponseEntity<String> returned = kafkaConnectManager.initStockConnector(clientDTO);
@@ -77,7 +76,7 @@ class KafkaConnectManagerTest {
         when(clientDTO.getDbUrl()).thenReturn("jdbc:postgresql://delosdb.coenmrmhbaiw.us-east-2.rds.amazonaws.com:5432/securities");
 
 
-        when(restTemplate.getForEntity(connectorMonthlyQuoteUrl, String.class)).thenThrow(HttpServerErrorException.class);
+        when(restTemplate.getForEntity(connectorquoteUrl, String.class)).thenThrow(HttpServerErrorException.class);
         ResponseEntity<String> ok = ResponseEntity.of(Optional.of("ok"));
 
         when(restTemplate.exchange(

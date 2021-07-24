@@ -63,16 +63,6 @@ class QuoteDeserializerTest {
 
 
     @Test
-    void deserializeOperationNoExchange() {
-
-        byte[] value = "{\"payload\":{\"op\":\"r\",\"after\":{\"code\":\"AAPL\"}}}".getBytes(StandardCharsets.UTF_8);
-        QuoteWrapper quote = quoteDeserializer.deserialize(null, value);
-
-        assertEquals(SQL_OPERATION.ERROR, quote.getOperation());
-
-    }
-
-    @Test
     void deserializeOperationNoCode() {
 
         byte[] value = "{\"payload\":{\"op\":\"r\",\"after\":{\"exchange\":\"US\"}}}".getBytes(StandardCharsets.UTF_8);
