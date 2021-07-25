@@ -1,5 +1,7 @@
 package ch.nblotti.pheidippides.kafka.user;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serializer;
@@ -7,30 +9,22 @@ import org.modelmapper.AbstractConverter;
 import org.modelmapper.Converter;
 import org.modelmapper.ModelMapper;
 
+import java.nio.charset.StandardCharsets;
+
 @Slf4j
 public class UserSubscriptionSerializer implements Serializer<UserSubscription> {
 
-    private final ModelMapper modelMapper = new ModelMapper();
+    ObjectMapper objectMapper = new ObjectMapper();
 
-
-    public UserSubscriptionSerializer() {
-        initMapper();
-    }
-
-    private void initMapper() {
-        Converter<UserSubscription, byte[]> userConverter = new AbstractConverter<UserSubscription, byte[]>() {
-
-            @Override
-            protected byte[] convert(UserSubscription userSubscription) {
-
-                return null;
-            }
-        };
-        modelMapper.addConverter(userConverter);
-    }
 
     @Override
     public byte[] serialize(String s, UserSubscription userSubscription) {
-        return modelMapper.map(userSubscription, byte[].class);
+        try {
+            return objectMapper.writerWithDefaultPrettyPrinter()
+                    .writeValueAsString(userSubscription).getBytes(StandardCharsets.UTF_8);
+        } catch (JsonProcessingException e) {
+            log.error(e.getMessage());
+            return null;
+        }
     }
 }

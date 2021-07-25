@@ -96,7 +96,7 @@ public class PheidippidesTopology {
         KStream<QuoteKeyWrapper, QuoteWrapper> transformedAndMerged = builder.stream(internalTransformedTopicName, Consumed.with(quoteKeySerdes, quoteSerdes));
 
         //merge with delete & thombstone
-        KStream<QuoteKeyWrapper, QuoteWrapper> merged = transformedAndMerged.merge(notTransformed);
+        KStream<QuoteKeyWrapper, QuoteWrapper> merged = notTransformed.merge(transformedAndMerged);
 
         //send remerged quotes to the filtred topic
         merged.to(quoteTopicFiltredStr, Produced.with(quoteKeySerdes, quoteSerdes));

@@ -1,5 +1,9 @@
 package ch.nblotti.pheidippides.kafka.user;
 
+import com.fasterxml.jackson.annotation.JsonSetter;
+import com.fasterxml.jackson.annotation.Nulls;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import lombok.extern.slf4j.Slf4j;
@@ -8,6 +12,8 @@ import org.modelmapper.AbstractConverter;
 import org.modelmapper.Converter;
 import org.modelmapper.ModelMapper;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 
@@ -15,35 +21,21 @@ import java.util.List;
 public class UserSubscriptionDeserializer implements Deserializer<UserSubscription> {
 
 
+    ObjectMapper objectMapper = new ObjectMapper();
 
-    private final ModelMapper modelMapper = new ModelMapper();
 
+    public UserSubscriptionDeserializer(){
+        objectMapper.setDefaultSetterInfo(JsonSetter.Value.forContentNulls(Nulls.AS_EMPTY));
 
-    public UserSubscriptionDeserializer() {
-        initMapper();
     }
-
     @Override
     public UserSubscription deserialize(String s, byte[] bytes) {
 
-        return modelMapper.map(bytes, UserSubscription.class);
+        try {
+            return objectMapper.readValue(bytes, UserSubscription.class);
+        } catch (IOException e) {
+            log.error(e.getMessage());
+            return null;
+        }
     }
-
-    private void initMapper() {
-        Converter<byte[], UserSubscription> userConverter = new AbstractConverter<byte[], UserSubscription>() {
-
-            @Override
-            protected UserSubscription convert(byte[] bytes) {
-
-                DocumentContext context = JsonPath.parse(new String(bytes));
-                List<String> stocks  = context.read("$.stocks[*]", List.class);
-                List<String> etfs  = context.read("$.etfs[*]", List.class);
-                UserSubscription userSubscription = new UserSubscription();
-                userSubscription.setStocks(stocks);
-                userSubscription.setEtfs(etfs);
-                return userSubscription;
-            }
-        };
-        modelMapper.addConverter(userConverter);
     }
-}
