@@ -9,7 +9,7 @@
     </parent>
     <groupId>ch.nblotti</groupId>
     <artifactId>Pheidippides</artifactId>
-    <version>2.2.1-SNAPSHOT</version>
+    <version>2.2.1</version>
     <name>Pheidippides</name>
     <description>Pheidippides MVP</description>
 
@@ -25,7 +25,7 @@
         <url>https://github.com/nblotti/Pheidippides.git</url>
         <connection>scm:git:git://git@github.com/nblotti/Pheidippides.git</connection>
         <developerConnection>scm:git:ssh://git@github.com/nblotti/Pheidippides.git</developerConnection>
-        <tag>Pheidippides-2.0.5</tag>
+        <tag>Pheidippides-2.2.1</tag>
     </scm>
 
     <properties>
