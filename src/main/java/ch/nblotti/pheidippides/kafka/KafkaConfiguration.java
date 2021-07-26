@@ -40,6 +40,9 @@ public class KafkaConfiguration {
     @Value("${app.user_quote_subscription_table}")
     public String userSubscriptionTopic;
 
+    @Value("${app.user_quote_subscription_filtred}")
+    public String userSubscriptionTopicFiltred;
+
 
     @Bean
     KafkaConnectManager kafkaConnectManager(RestTemplate restTemplate) {
@@ -50,7 +53,7 @@ public class KafkaConfiguration {
     PheidippidesTopology pheidippidesTopology() {
 
 
-        return new PheidippidesTopology(quoteTopic, quoteTopicFiltred, userSubscriptionTopic);
+        return new PheidippidesTopology(quoteTopic, quoteTopicFiltred, userSubscriptionTopic, userSubscriptionTopicFiltred);
     }
 
 
@@ -58,7 +61,7 @@ public class KafkaConfiguration {
     @Scope("singleton")
     KafkaStreamManager kafkaStreamManager(StateMachine<STATES, EVENTS> stateMachine, PheidippidesTopology pheidippidesTopology) {
 
-        return new KafkaStreamManager(stateMachine, pheidippidesTopology, kafkaConnectString, userSubscriptionTopic, apicurioRegistryUrl);
+        return new KafkaStreamManager(stateMachine, pheidippidesTopology, kafkaConnectString, userSubscriptionTopic, userSubscriptionTopicFiltred, apicurioRegistryUrl);
     }
 
 

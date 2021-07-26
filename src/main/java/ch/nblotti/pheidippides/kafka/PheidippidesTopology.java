@@ -9,6 +9,7 @@ import ch.nblotti.pheidippides.kafka.user.UserSubscriptionSerdes;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.internals.Topic;
@@ -17,6 +18,8 @@ import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.Topology;
 import org.apache.kafka.streams.kstream.*;
+import org.apache.kafka.streams.state.QueryableStoreTypes;
+import org.apache.kafka.streams.state.ReadOnlyKeyValueStore;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -25,12 +28,14 @@ import java.util.stream.Stream;
 
 @AllArgsConstructor
 @Setter
+@Slf4j
 public class PheidippidesTopology {
 
 
     private String quoteTopic;
     private String quoteTopicFiltred;
     private String userSubscriptionTopic;
+    private String userSubscriptionTopicFiltred;
 
 
     private ValueJoiner<Container, String, ContainerWithQuote> containerWithQuoteJoiner() {
@@ -69,7 +74,8 @@ public class PheidippidesTopology {
 
 
         // get subscribed quotes
-        KTable<String, String> userSubscriptions = getValueSubsribedStream(clientDTO, builder);
+        GlobalKTable<String, String> userSubscriptions = getValueSubsribedStream(clientDTO, builder);
+
 
         KStream<QuoteKeyWrapper, QuoteWrapper> quoteTopicFiltredTopic = builder.stream(quoteTopic, Consumed.with(quoteKeySerdes, quoteSerdes));
 
@@ -85,7 +91,13 @@ public class PheidippidesTopology {
         branches.get("split-2").map((key, value) -> new KeyValue(value.getCode(), new Container(key, value))).to(internalMapTopicName, Produced.with(Serdes.String(), new ContainerSerdes()));
 
         KStream<String, Container> toFilter = builder.stream(internalMapTopicName, Consumed.with(Serdes.String(), new ContainerSerdes()));
-        KStream<String, ContainerWithQuote> filtred = toFilter.join(userSubscriptions, containerWithQuoteJoiner());
+        KStream<String, ContainerWithQuote> filtred = toFilter.join(userSubscriptions, new KeyValueMapper<String, Container, String>() {
+            @Override
+            public String apply(String key, Container value) {
+
+                return value.getQuoteWrapper().getCode();
+            }
+        }, containerWithQuoteJoiner());
 
         //transform to wrapper
 
@@ -106,10 +118,11 @@ public class PheidippidesTopology {
     }
 
     @NotNull
-    private KTable<String, String> getValueSubsribedStream(ClientDTO clientDTO, StreamsBuilder builder) {
+    private GlobalKTable<String, String> getValueSubsribedStream(ClientDTO clientDTO, StreamsBuilder builder) {
 
         UserSubscriptionSerdes userSubscriptionSerdes = new UserSubscriptionSerdes();
 
+        String userSubscriptionTopicFiltredStr = String.format(userSubscriptionTopicFiltred, clientDTO.getUserName());
 
         Predicate<String, UserSubscription> iscurrentUser = (key, value) -> {
             return key.equals(clientDTO.getUserName());
@@ -118,10 +131,11 @@ public class PheidippidesTopology {
 
         KStream<String, UserSubscription> userSubscriptions = builder.stream(userSubscriptionTopic, Consumed.with(Serdes.String(), userSubscriptionSerdes));
 
+        userSubscriptions.print(Printed.toSysOut());
 
         KStream<String, UserSubscription> users = userSubscriptions.filter(iscurrentUser);
 
-        KTable<String, String> quotesSubscribed = users.flatMap((key, value) -> {
+        users.flatMap((key, value) -> {
                     List<String> symbols = Stream.of(value.getStocks(), value.getEtfs())
                             .flatMap(Collection::stream).collect(Collectors.toList());
 
@@ -131,10 +145,10 @@ public class PheidippidesTopology {
                     }
                     return result;
                 }
-        ).toTable();
+        ).to(userSubscriptionTopicFiltredStr, Produced.with(Serdes.String(), Serdes.String()));
 
+        return builder.globalTable(userSubscriptionTopicFiltredStr, Consumed.with(Serdes.String(), Serdes.String()));
 
-        return quotesSubscribed;
     }
 
 

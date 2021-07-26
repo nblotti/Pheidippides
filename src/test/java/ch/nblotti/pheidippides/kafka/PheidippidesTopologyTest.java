@@ -31,7 +31,7 @@ class PheidippidesTopologyTest {
     public String quoteTopic = "quoteTopic";
     public String monthlyQuoteTopicFiltred = "%s_quoteTopicFiltred";
     public String userSubscriptionTopic = "userSubscriptionTopic";
-    public String userFiltredTopic = "userSubscriptionFiltredTopic";
+    public String userSubscriptionTopicFiltred = "userSubscriptionTopicFiltred";
 
 
     TopologyTestDriver testDriver;
@@ -66,7 +66,7 @@ class PheidippidesTopologyTest {
         streamConfiguration.setProperty(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
         streamConfiguration.setProperty(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
 
-        PheidippidesTopology pheidippidesTopology = new PheidippidesTopology(quoteTopic, monthlyQuoteTopicFiltred, userSubscriptionTopic);
+        PheidippidesTopology pheidippidesTopology = new PheidippidesTopology(quoteTopic, monthlyQuoteTopicFiltred, userSubscriptionTopic,userSubscriptionTopicFiltred);
         UserSubscriptionSerdes userSubscriptionSerdes = new UserSubscriptionSerdes();
 
         doReturn(Boolean.TRUE).when(quoteFilter).filter(any(), any());

@@ -46,6 +46,9 @@ public class KafkaStreamManager {
     public String userSubscriptionTopic;
 
     @NonNull
+    public String userSubscriptionTopicFiltred;
+
+    @NonNull
     private String apicurioRegistryUrl;
 
 
@@ -72,7 +75,7 @@ public class KafkaStreamManager {
     }
 
 
-    private void createTopic(Properties streamsConfiguration, String internalMapTopicName, String internalTransformedTopicName, String userSubscriptionTopicName) {
+    private void createTopic(Properties streamsConfiguration, String internalMapTopicName, String internalTransformedTopicName, String userSubscriptionTopicName, String userSubscriptionTopicFiltred) {
 
 
         AdminClient client = AdminClient.create(streamsConfiguration);
@@ -87,6 +90,10 @@ public class KafkaStreamManager {
         topics.add(new NewTopic(internalTransformedTopicName,
                 Integer.parseInt("1"),
                 Short.parseShort("1")));
+        topics.add(new NewTopic(userSubscriptionTopicFiltred,
+                Integer.parseInt("1"),
+                Short.parseShort("1")));
+
         topics.add(new NewTopic(userSubscriptionTopicName,
                 Integer.parseInt("1"),
                 Short.parseShort("1")));
@@ -103,8 +110,9 @@ public class KafkaStreamManager {
         String internalMapTopicName = String.format(INTERNAL_MAP, clientDTO.getUserName());
         String internalTransformedTopicName = String.format(INTERNAL_TRANSFORMED, clientDTO.getUserName());
         String userSubscriptionTopicName = String.format(userSubscriptionTopic, clientDTO.getUserName());
+        String userSubscriptionTopicFiltredName = String.format(userSubscriptionTopicFiltred, clientDTO.getUserName());
 
-        createTopic(streamsConfiguration, internalMapTopicName, internalTransformedTopicName, userSubscriptionTopicName);
+        createTopic(streamsConfiguration, internalMapTopicName, internalTransformedTopicName, userSubscriptionTopicName,userSubscriptionTopicFiltredName);
 
         streams = new KafkaStreams(pheidippidesTopology.getTopology(clientDTO, streamsConfiguration, internalMapTopicName, internalTransformedTopicName, userSubscriptionTopicName), streamsConfiguration);
         Runtime.getRuntime().addShutdownHook(new Thread(streams::close));
