@@ -55,6 +55,24 @@ public class PheidippidesStateMachineListener {
 
     }
 
+    @StatesOnEntry(target = STATES.TREATING_ZK_CLIENT_CHANGE_EVENT)
+    public void treatingZKClientEvent(StateMachine<STATES, EVENTS> stateMachine, ExtendedState extendedState, @EventHeader Boolean followedClient) {
+        ClientDTO clientDTO = (ClientDTO) extendedState.getVariables().get(CURRENT_CLIENT);
+
+
+        if (followedClient) {
+            kafkaConnectManager.deleteStockConnector(clientDTO);
+            kafkaStreamManager.deleteTopic(clientDTO);
+        }
+        kafkaStreamManager.doCloseStream(clientDTO);
+        clientService.unSubscribe();
+
+
+        log.info(String.format("Change detected in clients, closing connnection and restarting client election process"));
+        stateMachine.sendEvent(EVENTS.EVENT_TREATED);
+    }
+
+
     @StatesOnEntry(target = STATES.TREATING_ZK_STRATEGIES_EVENT)
     public void treatingZKStrategiesEvent(StateMachine<STATES, EVENTS> stateMachine, @EventHeader ClientDTO newClient, ExtendedState extendedState) {
 

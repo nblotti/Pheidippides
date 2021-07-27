@@ -20,6 +20,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.statemachine.StateMachine;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
@@ -41,6 +42,9 @@ public class KafkaStreamManager {
 
     @NonNull
     private String kafkaConnectString;
+
+    @NonNull
+    public String quoteTopicFiltred;
 
     @NonNull
     public String userSubscriptionTopic;
@@ -75,13 +79,36 @@ public class KafkaStreamManager {
     }
 
 
-    private void createTopic(Properties streamsConfiguration, String internalMapTopicName, String internalTransformedTopicName, String userSubscriptionTopicName, String userSubscriptionTopicFiltred) {
+    public void deleteTopic(ClientDTO clientDTO) {
+
+        String internalMapTopicName = String.format(INTERNAL_MAP, clientDTO.getUserName());
+        String internalTransformedTopicName = String.format(INTERNAL_TRANSFORMED, clientDTO.getUserName());
+        String userSubscriptionTopicName = String.format(userSubscriptionTopic, clientDTO.getUserName());
+        String userSubscriptionTopicFiltredName = String.format(userSubscriptionTopicFiltred, clientDTO.getUserName());
+
+        String quoteTopicFiltredName = String.format(quoteTopicFiltred, clientDTO.getUserName());
+
+
+        Properties streamsConfiguration = initStreamConfig(clientDTO.getUserName());
+
+        AdminClient client = AdminClient.create(streamsConfiguration);
+
+        List<String> topics = Arrays.asList(STOCK_MONTHLY_QUOTE, quoteTopicFiltredName, internalMapTopicName, internalTransformedTopicName, userSubscriptionTopicName, userSubscriptionTopicFiltredName);
+        client.deleteTopics(topics);
+        client.close();
+    }
+
+
+    private void createTopic(Properties streamsConfiguration, String internalMapTopicName, String quoteTopicFiltredName, String internalTransformedTopicName, String userSubscriptionTopicName, String userSubscriptionTopicFiltred) {
 
 
         AdminClient client = AdminClient.create(streamsConfiguration);
 
         List<NewTopic> topics = new ArrayList<>();
         topics.add(new NewTopic(STOCK_MONTHLY_QUOTE,
+                Integer.parseInt("1"),
+                Short.parseShort("1")));
+        topics.add(new NewTopic(quoteTopicFiltredName,
                 Integer.parseInt("1"),
                 Short.parseShort("1")));
         topics.add(new NewTopic(internalMapTopicName,
@@ -111,8 +138,9 @@ public class KafkaStreamManager {
         String internalTransformedTopicName = String.format(INTERNAL_TRANSFORMED, clientDTO.getUserName());
         String userSubscriptionTopicName = String.format(userSubscriptionTopic, clientDTO.getUserName());
         String userSubscriptionTopicFiltredName = String.format(userSubscriptionTopicFiltred, clientDTO.getUserName());
+        String quoteTopicFiltredName = String.format(quoteTopicFiltred, clientDTO.getUserName());
 
-        createTopic(streamsConfiguration, internalMapTopicName, internalTransformedTopicName, userSubscriptionTopicName,userSubscriptionTopicFiltredName);
+        createTopic(streamsConfiguration, quoteTopicFiltredName,internalMapTopicName, internalTransformedTopicName, userSubscriptionTopicName, userSubscriptionTopicFiltredName);
 
         streams = new KafkaStreams(pheidippidesTopology.getTopology(clientDTO, streamsConfiguration, internalMapTopicName, internalTransformedTopicName, userSubscriptionTopicName), streamsConfiguration);
         Runtime.getRuntime().addShutdownHook(new Thread(streams::close));

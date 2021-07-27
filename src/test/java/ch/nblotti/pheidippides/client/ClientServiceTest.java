@@ -287,7 +287,7 @@ class ClientServiceTest {
 
     clientService.registerToStrategyChanges(clientStr);
 
-    verify(zkClient, times(3)).subscribeChildChanges(anyString(), any(IZkChildListener.class));
+    verify(zkClient, times(4)).subscribeChildChanges(anyString(), any(IZkChildListener.class));
 
 
   }

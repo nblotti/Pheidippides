@@ -3,6 +3,7 @@ package ch.nblotti.pheidippides.datasource;
 import ch.nblotti.pheidippides.client.ClientDTO;
 import ch.nblotti.pheidippides.statemachine.EVENTS;
 import ch.nblotti.pheidippides.statemachine.STATES;
+import lombok.extern.slf4j.Slf4j;
 import org.flywaydb.core.Flyway;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.jdbc.datasource.lookup.AbstractRoutingDataSource;
@@ -15,7 +16,7 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
-
+@Slf4j
 public class RoutingDataSource extends AbstractRoutingDataSource {
 
 
@@ -89,12 +90,24 @@ public class RoutingDataSource extends AbstractRoutingDataSource {
 
     }
 
+    public void closeAllConnection() {
+        for (DataSourceEnum de : this.dataSources.keySet()) {
+
+            if (!de.equals(DataSourceEnum.HSQL)) {
+                DataSource current = this.dataSources.get(de);
+                this.dataSources.remove(de);
+                closeConnection(current);
+            }
+
+        }
+    }
+
     private void closeConnection(DataSource ds) {
 
         try {
             ds.getConnection().close();
         } catch (SQLException throwables) {
-            throwables.printStackTrace();
+            log.error(throwables.getMessage());
         }
 
     }
