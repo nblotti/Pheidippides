@@ -15,7 +15,7 @@ public class KafkaConnectManager {
 
     RestTemplate restTemplate;
     private final String connectorQuoteUrl;
-    public String connectorUrl;
+    private final String connectorUrl;
     private String connectPayload;
     private String quoteTopicFiltred;
 
@@ -54,8 +54,7 @@ public class KafkaConnectManager {
 
 
     String buildConnnectorPayload(ClientDTO clientDTO) {
-        String weeklyFullPayload = String.format(connectPayload, clientDTO.getUserName(), clientDTO.getDbUrl(), clientDTO.getUserName(),clientDTO.getDbUser(), clientDTO.getDbPassword());
-        return weeklyFullPayload;
+        return String.format(connectPayload, clientDTO.getUserName(), clientDTO.getDbUrl(), clientDTO.getUserName(),clientDTO.getDbUser(), clientDTO.getDbPassword());
     }
 
 

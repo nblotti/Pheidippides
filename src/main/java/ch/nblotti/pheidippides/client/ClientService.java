@@ -17,11 +17,9 @@ import org.springframework.statemachine.StateMachine;
 import org.springframework.stereotype.Repository;
 import org.springframework.validation.annotation.Validated;
 
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 @Repository
 @Slf4j
@@ -45,7 +43,7 @@ public class ClientService {
 
     private final ZkClient zkClient;
 
-    private final String UUID;
+    private final String uuid;
 
     private StateMachine<STATES, EVENTS> stateMachine;
 
@@ -56,7 +54,7 @@ public class ClientService {
         this.zkClient = zkClient;
 
         this.stateMachine = stateMachine;
-        this.UUID = java.util.UUID.randomUUID().toString();
+        this.uuid = java.util.UUID.randomUUID().toString();
     }
 
     public void subscribe() {
@@ -117,7 +115,7 @@ public class ClientService {
 
         List<String> freeClients = findAllClient();
         for (String clientName : freeClients) {
-            if (getNodeAllowed(clientName) != 0 && getLiveNodes(clientName).size() == 0) {
+            if (getNodeAllowed(clientName) != 0 && getLiveNodes(clientName).isEmpty()) {
                 return clientName;
             }
         }
@@ -143,7 +141,7 @@ public class ClientService {
     }
 
     String getUuid() {
-        return this.UUID;
+        return this.uuid;
     }
 
 

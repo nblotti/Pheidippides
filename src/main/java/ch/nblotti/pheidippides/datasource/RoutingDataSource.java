@@ -13,6 +13,7 @@ import org.springframework.statemachine.StateMachine;
 
 import javax.sql.DataSource;
 import java.sql.SQLException;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -23,7 +24,7 @@ public class RoutingDataSource extends AbstractRoutingDataSource {
     public static final String DB_MIGRATION_LOCATION = "db/migration";
     public static final String NEW_CLIENT = "newClient";
 
-    private final Map<DataSourceEnum, DataSource> dataSources = new HashMap<>();
+    private final EnumMap<DataSourceEnum, DataSource> dataSources = new EnumMap<>(DataSourceEnum.class);
     private final StateMachine<STATES, EVENTS> stateMachine;
 
     public RoutingDataSource(DataSource dataSource, StateMachine<STATES, EVENTS> stateMachine) {
@@ -48,7 +49,7 @@ public class RoutingDataSource extends AbstractRoutingDataSource {
     protected DataSource determineTargetDataSource() {
         DataSourceEnum lookupKey = (DataSourceEnum) determineCurrentLookupKey();
 
-        return (DataSource) dataSources.get(lookupKey);
+        return dataSources.get(lookupKey);
     }
 
     public void createDataSource(ClientDTO clientDTO) {

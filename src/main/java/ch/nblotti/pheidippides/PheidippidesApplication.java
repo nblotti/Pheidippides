@@ -32,6 +32,7 @@ import org.springframework.web.client.RestTemplate;
 
 import javax.sql.DataSource;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.format.DateTimeFormatter;
 import java.util.Properties;
@@ -52,7 +53,6 @@ public class PheidippidesApplication {
 
     @Value("${spring.zookeeper.connect-string}")
     private String zkConnectString;
-
 
 
     @Value("${global.full-date-format}")
@@ -93,27 +93,23 @@ public class PheidippidesApplication {
 
             @Override
             public byte[] serialize(Object data) throws ZkMarshallingError {
-                try {
-                    return ((String) data).getBytes("UTF-8");
-                } catch (UnsupportedEncodingException e) {
-                    throw new RuntimeException(e);
-                }
+
+
+                return ((String) data).getBytes(StandardCharsets.UTF_8);
+
             }
 
             @Override
             public Object deserialize(byte[] bytes) throws ZkMarshallingError {
                 if (bytes == null)
-                    return null;
-                try {
-                    return new String(bytes, "UTF-8");
-                } catch (UnsupportedEncodingException e) {
-                    throw new RuntimeException(e);
-                }
+                    return new byte[0];
+                return new String(bytes, StandardCharsets.UTF_8);
+
             }
         };
     }
 
-      @Bean
+    @Bean
     public DataSource createDefaultSource() {
         DriverManagerDataSource dataSource = new DriverManagerDataSource();
         dataSource.setDriverClassName("org.h2.Driver");
@@ -137,7 +133,7 @@ public class PheidippidesApplication {
         LocalContainerEntityManagerFactoryBean em
                 = new LocalContainerEntityManagerFactoryBean();
         em.setDataSource(routingDatasource);
-        em.setPackagesToScan(new String[]{basicPackage});
+        em.setPackagesToScan(basicPackage);
 
         JpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
         em.setJpaVendorAdapter(vendorAdapter);
@@ -174,11 +170,10 @@ public class PheidippidesApplication {
     public RestTemplate restTemplate(RestTemplateBuilder restTemplateBuilder) {
 
 
-        RestTemplate restTemplate = restTemplateBuilder
+        return restTemplateBuilder
                 .setConnectTimeout(Duration.ofSeconds(30))
                 .setReadTimeout(Duration.ofMinutes(5))
                 .build();
-        return restTemplate;
     }
 
 }

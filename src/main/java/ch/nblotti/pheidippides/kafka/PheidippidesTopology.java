@@ -10,19 +10,17 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.kafka.clients.admin.AdminClient;
-import org.apache.kafka.clients.admin.NewTopic;
-import org.apache.kafka.common.internals.Topic;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.Topology;
 import org.apache.kafka.streams.kstream.*;
-import org.apache.kafka.streams.state.QueryableStoreTypes;
-import org.apache.kafka.streams.state.ReadOnlyKeyValueStore;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -39,29 +37,24 @@ public class PheidippidesTopology {
 
 
     private ValueJoiner<Container, String, ContainerWithQuote> containerWithQuoteJoiner() {
-        return (container, quote) -> {
-            return new ContainerWithQuote(container, quote);
-        };
+        return (container, quote) -> new ContainerWithQuote(container, quote);
     }
 
     ;
 
     private Predicate<QuoteKeyWrapper, QuoteWrapper> thombstoneOrDeleteOperationPredicate() {
-        return (key, value) -> {
-            return (key != null && value == null) || value.getOperation().equals(SQL_OPERATION.DELETE) || value.getOperation().equals(SQL_OPERATION.EMPTY);
-        };
+        return (key, value) ->
+                (key != null && value == null) || value.getOperation().equals(SQL_OPERATION.DELETE) || value.getOperation().equals(SQL_OPERATION.EMPTY);
     }
 
     ;
 
     private Predicate<QuoteKeyWrapper, QuoteWrapper> operationToFilterPredicate() {
-        return (key, value) -> {
-            return key != null && value != null && !value.getOperation().equals(SQL_OPERATION.DELETE);
-        };
+        return (key, value) -> key != null && value != null && !value.getOperation().equals(SQL_OPERATION.DELETE);
     }
 
 
-    public Topology getTopology(ClientDTO clientDTO, String internalMapTopicName, String internalTransformedTopicName, String userSubscriptionTopicName) {
+    public Topology getTopology(ClientDTO clientDTO, String internalMapTopicName, String internalTransformedTopicName) {
 
         final StreamsBuilder builder = new StreamsBuilder();
 
@@ -92,15 +85,14 @@ public class PheidippidesTopology {
         KStream<String, Container> toFilter = builder.stream(internalMapTopicName, Consumed.with(Serdes.String(), new ContainerSerdes()));
 
 
-        KStream<String, ContainerWithQuote> filtred = toFilter.join(userSubscriptions, (String key, Container value) -> {
-            return value.getQuoteWrapper().getCode();
-        }, containerWithQuoteJoiner());
+        KStream<String, ContainerWithQuote> filtred = toFilter.join(userSubscriptions, (String key, Container value) ->
+                value.getQuoteWrapper().getCode(), containerWithQuoteJoiner());
 
         //transform to wrapper
 
-        filtred.map((key, value) -> {
-            return new KeyValue<>(value.getContainer().getQuoteKeyWrapper(), value.getContainer().getQuoteWrapper());
-        }).to(internalTransformedTopicName, Produced.with(quoteKeySerdes, quoteSerdes));
+        filtred.map((key, value) ->
+                new KeyValue<>(value.getContainer().getQuoteKeyWrapper(), value.getContainer().getQuoteWrapper())
+        ).to(internalTransformedTopicName, Produced.with(quoteKeySerdes, quoteSerdes));
 
         KStream<QuoteKeyWrapper, QuoteWrapper> transformedAndMerged = builder.stream(internalTransformedTopicName, Consumed.with(quoteKeySerdes, quoteSerdes));
 
@@ -121,16 +113,14 @@ public class PheidippidesTopology {
 
         String userSubscriptionTopicFiltredStr = String.format(userSubscriptionTopicFiltred, clientDTO.getUserName());
 
-        Predicate<String, UserSubscription> iscurrentUser = (key, value) -> {
-            return key.equals(clientDTO.getUserName());
-        };
+        Predicate<String, UserSubscription> isCurrentUser = (key, value) -> key.equals(clientDTO.getUserName());
 
 
         KStream<String, UserSubscription> userSubscriptions = builder.stream(userSubscriptionTopic, Consumed.with(Serdes.String(), userSubscriptionSerdes));
 
         userSubscriptions.print(Printed.toSysOut());
 
-        KStream<String, UserSubscription> users = userSubscriptions.filter(iscurrentUser);
+        KStream<String, UserSubscription> users = userSubscriptions.filter(isCurrentUser);
 
         users.flatMap((key, value) -> {
                     List<String> symbols = Stream.of(value.getStocks(), value.getEtfs())
