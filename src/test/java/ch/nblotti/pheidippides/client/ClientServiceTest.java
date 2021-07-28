@@ -177,7 +177,6 @@ class ClientServiceTest {
     clients.add(fourthClient);
 
     List<String> returnedNotFreeClient = mock(List.class);
-    when(returnedNotFreeClient.size()).thenReturn(5);
     doReturn(clients).when(clientService).findAllClient();
 
     doReturn(returnedNotFreeClient).when(clientService).getLiveNodes(firstClient);
