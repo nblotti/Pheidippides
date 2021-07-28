@@ -73,7 +73,7 @@ public class KafkaStreamManager {
 
     }
 
-    public void doCloseStream(ClientDTO clientDTO) {
+    public void doCloseStream() {
 
         streams.close();
     }
@@ -142,7 +142,7 @@ public class KafkaStreamManager {
 
         createTopic(streamsConfiguration, quoteTopicFiltredName,internalMapTopicName, internalTransformedTopicName, userSubscriptionTopicName, userSubscriptionTopicFiltredName);
 
-        streams = new KafkaStreams(pheidippidesTopology.getTopology(clientDTO, streamsConfiguration, internalMapTopicName, internalTransformedTopicName, userSubscriptionTopicName), streamsConfiguration);
+        streams = new KafkaStreams(pheidippidesTopology.getTopology(clientDTO, internalMapTopicName, internalTransformedTopicName, userSubscriptionTopicName), streamsConfiguration);
         Runtime.getRuntime().addShutdownHook(new Thread(streams::close));
         streams.start();
 

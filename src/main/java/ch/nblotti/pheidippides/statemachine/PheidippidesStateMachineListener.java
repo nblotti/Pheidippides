@@ -32,7 +32,10 @@ public class PheidippidesStateMachineListener {
             log.warn("No client available, retrying in 10s");
             Thread.sleep(10000);
         } catch (InterruptedException e) {
+
             log.info(e.getMessage());
+            Thread.currentThread().interrupt();
+
         }
         stateMachine.sendEvent(EVENTS.SUCCESS);
     }
@@ -77,7 +80,7 @@ public class PheidippidesStateMachineListener {
             kafkaConnectManager.deleteStockConnector(clientDTO);
             kafkaStreamManager.deleteTopic(clientDTO);
         }
-        kafkaStreamManager.doCloseStream(clientDTO);
+        kafkaStreamManager.doCloseStream();
         clientService.unSubscribe(clientDTO);
 
 
@@ -100,7 +103,7 @@ public class PheidippidesStateMachineListener {
 
         try {
             ClientDTO oldClient = (ClientDTO) extendedState.getVariables().get(CURRENT_CLIENT);
-            kafkaStreamManager.doCloseStream(oldClient);
+            kafkaStreamManager.doCloseStream();
             kafkaConnectManager.deleteStockConnector(oldClient);
 
             routingDataSource.createDataSource(newClient);

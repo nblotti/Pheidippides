@@ -29,16 +29,15 @@ class ClientServiceTest {
 
   ClientService clientService;
   ZkClient zkClient;
-  DateTimeFormatter formatMessage;
+
   StateMachine<STATES, EVENTS> stateMachine;
 
 
   @BeforeEach
   void beforeEach() {
     zkClient = Mockito.mock(ZkClient.class);
-    formatMessage = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     stateMachine = Mockito.mock(StateMachine.class);
-    clientService = Mockito.spy(new ClientService(zkClient, stateMachine,formatMessage));
+    clientService = Mockito.spy(new ClientService(zkClient, stateMachine));
   }
 
 

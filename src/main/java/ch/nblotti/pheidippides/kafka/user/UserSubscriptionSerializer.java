@@ -10,6 +10,7 @@ import org.modelmapper.Converter;
 import org.modelmapper.ModelMapper;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 
 @Slf4j
 public class UserSubscriptionSerializer implements Serializer<UserSubscription> {
@@ -24,7 +25,7 @@ public class UserSubscriptionSerializer implements Serializer<UserSubscription> 
                     .writeValueAsString(userSubscription).getBytes(StandardCharsets.UTF_8);
         } catch (JsonProcessingException e) {
             log.error(e.getMessage());
-            return null;
+            return new byte[0];
         }
     }
 }

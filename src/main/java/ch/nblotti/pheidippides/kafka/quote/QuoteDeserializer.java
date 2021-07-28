@@ -16,7 +16,7 @@ public class QuoteDeserializer implements Deserializer<QuoteWrapper> {
     public static final String PAYLOAD = "payload";
     public static final String CODE = "code";
     private final ObjectMapper mapper = new ObjectMapper();
-    private JsonNode payload;
+    private JsonNode content;
 
 
     @Override
@@ -31,13 +31,13 @@ public class QuoteDeserializer implements Deserializer<QuoteWrapper> {
             if (in == null)
                 quote.setOperation(SQL_OPERATION.EMPTY);
             else {
-                payload = mapper.readTree(in).get(PAYLOAD);
-                SQL_OPERATION operation = SQL_OPERATION.fromString(payload.get(OP).asText());
+                content = mapper.readTree(in).get(PAYLOAD);
+                SQL_OPERATION operation = SQL_OPERATION.fromString(content.get(OP).asText());
 
                 quote.setOperation(operation);
 
                 if (!operation.equals(SQL_OPERATION.DELETE)) {
-                    String code = payload.get(AFTER).get(CODE).asText();
+                    String code = content.get(AFTER).get(CODE).asText();
                     quote.setCode(code);
                 }
 

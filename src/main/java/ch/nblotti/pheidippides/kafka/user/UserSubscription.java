@@ -19,17 +19,13 @@ public class UserSubscription {
 
 
     public void setStocks(List<String> stocks) {
-        if (stocks == null) {
-            stocks = Collections.emptyList();
-        } else {
+        if (stocks != null) {
             this.stocks = stocks;
         }
     }
 
     public void setEtfs(List<String> etfs) {
-        if (etfs == null) {
-            etfs = Collections.emptyList();
-        } else {
+        if (etfs != null) {
             this.etfs = etfs;
         }
     }

@@ -61,7 +61,7 @@ public class PheidippidesTopology {
     }
 
 
-    public Topology getTopology(ClientDTO clientDTO, Properties streamsConfiguration, String internalMapTopicName, String internalTransformedTopicName, String userSubscriptionTopicName) {
+    public Topology getTopology(ClientDTO clientDTO, String internalMapTopicName, String internalTransformedTopicName, String userSubscriptionTopicName) {
 
         final StreamsBuilder builder = new StreamsBuilder();
 
@@ -70,7 +70,6 @@ public class PheidippidesTopology {
 
 
         String quoteTopicFiltredStr = String.format(quoteTopicFiltred, clientDTO.getUserName());
-        String quoteTopicToFiltredStr = String.format("%s_tofilter", clientDTO.getUserName());
 
 
         // get subscribed quotes
@@ -88,15 +87,13 @@ public class PheidippidesTopology {
         // Regroup key & value of the events in the branch conaining all elements to transform
 
         KStream<QuoteKeyWrapper, QuoteWrapper> notTransformed = branches.get("split-1");
-        branches.get("split-2").map((key, value) -> new KeyValue(value.getCode(), new Container(key, value))).to(internalMapTopicName, Produced.with(Serdes.String(), new ContainerSerdes()));
+        branches.get("split-2").map((key, value) -> new KeyValue<String, Container>(value.getCode(), new Container(key, value))).to(internalMapTopicName, Produced.with(Serdes.String(), new ContainerSerdes()));
 
         KStream<String, Container> toFilter = builder.stream(internalMapTopicName, Consumed.with(Serdes.String(), new ContainerSerdes()));
-        KStream<String, ContainerWithQuote> filtred = toFilter.join(userSubscriptions, new KeyValueMapper<String, Container, String>() {
-            @Override
-            public String apply(String key, Container value) {
 
-                return value.getQuoteWrapper().getCode();
-            }
+
+        KStream<String, ContainerWithQuote> filtred = toFilter.join(userSubscriptions, (String key, Container value) -> {
+            return value.getQuoteWrapper().getCode();
         }, containerWithQuoteJoiner());
 
         //transform to wrapper

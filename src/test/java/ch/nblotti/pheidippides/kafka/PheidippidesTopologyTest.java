@@ -72,7 +72,7 @@ class PheidippidesTopologyTest {
         doReturn(Boolean.TRUE).when(quoteFilter).filter(any(), any());
         when(clientDTO.getUserName()).thenReturn("client1");
 
-        Topology topology = pheidippidesTopology.getTopology(clientDTO, streamConfiguration, "internalMapTopicName", "internalTransfodTopicName", "userSubscriptionTopicName");
+        Topology topology = pheidippidesTopology.getTopology(clientDTO, "internalMapTopicName", "internalTransfodTopicName", "userSubscriptionTopicName");
         testDriver = new TopologyTestDriver(topology, streamConfiguration);
 
 

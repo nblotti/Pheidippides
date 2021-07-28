@@ -91,11 +91,13 @@ public class RoutingDataSource extends AbstractRoutingDataSource {
     }
 
     public void closeAllConnection() {
-        for (DataSourceEnum de : this.dataSources.keySet()) {
 
-            if (!de.equals(DataSourceEnum.HSQL)) {
-                DataSource current = this.dataSources.get(de);
-                this.dataSources.remove(de);
+        for (Map.Entry<DataSourceEnum, DataSource> entry : dataSources.entrySet()) {
+            DataSourceEnum key = entry.getKey();
+
+            if (!key.equals(DataSourceEnum.HSQL)) {
+                DataSource current = this.dataSources.get(key);
+                this.dataSources.remove(key);
                 closeConnection(current);
             }
 
@@ -114,7 +116,7 @@ public class RoutingDataSource extends AbstractRoutingDataSource {
 
     @Override
     public void afterPropertiesSet() {
-
+        //Required, leave empty
     }
 }
 

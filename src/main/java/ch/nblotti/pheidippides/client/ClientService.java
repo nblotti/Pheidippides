@@ -41,23 +41,22 @@ public class ClientService {
     public static final String CLIENT_STRATEGIES = CLIENTS + "/%s/strategies";
     public static final String NEW_CLIENT = "newClient";
     public static final String FOLLOWED_CLIENT = "followedClient";
+    public static final String NODE_ILLEGAL_STATUS_DELETING = "node %s in illegal status, deleting";
 
     private final ZkClient zkClient;
 
     private final String UUID;
-    private final DateTimeFormatter formatMessage;
 
     private StateMachine<STATES, EVENTS> stateMachine;
 
 
     @Autowired
-    public ClientService(ZkClient zkClient, StateMachine<STATES, EVENTS> stateMachine, DateTimeFormatter formatMessage) {
+    public ClientService(ZkClient zkClient, StateMachine<STATES, EVENTS> stateMachine) {
 
         this.zkClient = zkClient;
 
         this.stateMachine = stateMachine;
         this.UUID = java.util.UUID.randomUUID().toString();
-        this.formatMessage = formatMessage;
     }
 
     public void subscribe() {
@@ -154,7 +153,7 @@ public class ClientService {
         String nodeAllowedPath = String.format(CLIENT_NODE_ALLOWED, clientName);
 
 
-        List<String> clientNode = zkClient.subscribeChildChanges(CLIENTS, new IZkChildListener() {
+        zkClient.subscribeChildChanges(CLIENTS, new IZkChildListener() {
             @Override
             public void handleChildChange(String parentPath, List<String> list) throws Exception {
 
@@ -174,34 +173,34 @@ public class ClientService {
                     stateMachine.sendEvent(message);
 
                 } catch (IllegalStateException ex) {
-                    log.error(String.format("node %s in illegal status, deleting", clientName));
+                    log.error(String.format(NODE_ILLEGAL_STATUS_DELETING, clientName));
                 }
             }
 
             @Override
             public void handleDataDeleted(String s) throws Exception {
-
+                throw new UnsupportedOperationException();
             }
 
         });
 
-        List<String> liveNodes = zkClient.subscribeChildChanges(liveNodesPath, new IZkChildListener() {
+        zkClient.subscribeChildChanges(liveNodesPath, new IZkChildListener() {
             @Override
             public void handleChildChange(String parentPath, List<String> list) throws Exception {
                 try {
                     buildAndSendUpdatedMessage(clientName, EVENTS.ZK_STRATEGIES_EVENT_RECEIVED);
                 } catch (IllegalStateException ex) {
-                    log.error(String.format("node %s in illegal status, deleting", clientName));
+                    log.error(String.format(NODE_ILLEGAL_STATUS_DELETING, clientName));
                 }
             }
         });
-        List<String> strategies = zkClient.subscribeChildChanges(strategiesPath, new IZkChildListener() {
+        zkClient.subscribeChildChanges(strategiesPath, new IZkChildListener() {
             @Override
             public void handleChildChange(String parentPath, List<String> list) throws Exception {
                 try {
                     buildAndSendUpdatedMessage(clientName, EVENTS.ZK_STRATEGIES_EVENT_RECEIVED);
                 } catch (IllegalStateException ex) {
-                    log.error(String.format("node %s in illegal status, deleting", clientName));
+                    log.error(String.format(NODE_ILLEGAL_STATUS_DELETING, clientName));
                 }
 
             }
@@ -282,13 +281,10 @@ public class ClientService {
             //le nombre de strategy ne se divise pas par le nombre de runner, le dernier va devoir prendre le delta.
             int reste = strategiesCount % allowedNode;
 
-            if (reste != 0 && windows != 0) {
-
-                //est on le dernier ?
-                if (position == (strategiesCount - reste) / windows) {
-                    min = ((position - 1) * windows) + 1;
-                    max = strategiesCount;
-                }
+            //est on le dernier ?
+            if (reste != 0 && windows != 0 && position == (strategiesCount - reste) / windows) {
+                min = ((position - 1) * windows) + 1;
+                max = strategiesCount;
             }
         }
         List<StrategiesDTO> strategies = new ArrayList<>();
@@ -338,7 +334,7 @@ public class ClientService {
 
     void addToLiveNodes(String nodeName) {
 
-        String path = zkClient.create(nodeName, "", ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
+        zkClient.create(nodeName, "", ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
 
     }
 
