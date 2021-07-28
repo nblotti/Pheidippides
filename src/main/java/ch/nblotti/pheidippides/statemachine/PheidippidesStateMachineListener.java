@@ -65,12 +65,6 @@ public class PheidippidesStateMachineListener {
     }
 
 
-    @StatesOnEntry(target = STATES.WAIT_FOR_EVENT)
-    public void waitForEvent(StateMachine<STATES, EVENTS> stateMachine) {
-
-
-    }
-
     @StatesOnEntry(target = STATES.TREATING_ZK_CLIENT_CHANGE_EVENT)
     public void treatingZKClientEvent(StateMachine<STATES, EVENTS> stateMachine, ExtendedState extendedState, @EventHeader Boolean followedClient) {
         ClientDTO clientDTO = (ClientDTO) extendedState.getVariables().get(CURRENT_CLIENT);
