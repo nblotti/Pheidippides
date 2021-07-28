@@ -25,6 +25,19 @@ public class PheidippidesStateMachineListener {
     private final KafkaStreamManager kafkaStreamManager;
 
 
+    @StatesOnEntry(target = STATES.NO_FREE_CLIENT)
+    public void waitForClient(StateMachine<STATES, EVENTS> stateMachine) {
+
+        try {
+            log.warn("No client available, retrying in 10s");
+            Thread.sleep(10000);
+        } catch (InterruptedException e) {
+            log.info(e.getMessage());
+        }
+        stateMachine.sendEvent(EVENTS.SUCCESS);
+    }
+
+
     @StatesOnEntry(target = STATES.INIT_ZOOKEEPER)
     public void initZookeeper() {
 
@@ -65,7 +78,7 @@ public class PheidippidesStateMachineListener {
             kafkaStreamManager.deleteTopic(clientDTO);
         }
         kafkaStreamManager.doCloseStream(clientDTO);
-        clientService.unSubscribe();
+        clientService.unSubscribe(clientDTO);
 
 
         log.info(String.format("Change detected in clients, closing connnection and restarting client election process"));

@@ -65,6 +65,10 @@ public class ClientService {
 
         // get the first free client
         String clientName = selectFreeClient();
+        if (clientName == null) {
+            stateMachine.sendEvent(EVENTS.WAIT_FOR_CLIENT);
+            return;
+        }
 
         // register as a client listener in Zookeeper
         registerToClientChanges(clientName);
@@ -74,8 +78,9 @@ public class ClientService {
 
     }
 
-    public void unSubscribe() {
+    public void unSubscribe(ClientDTO clientDTO) {
         zkClient.unsubscribeAll();
+        removeFromClientLiveNodes(clientDTO.getUserName());
 
     }
 
@@ -113,7 +118,7 @@ public class ClientService {
 
         List<String> freeClients = findAllClient();
         for (String clientName : freeClients) {
-            if (getLiveNodes(clientName).size() == 0) {
+            if (getNodeAllowed(clientName) != 0 && getLiveNodes(clientName).size() == 0) {
                 return clientName;
             }
         }
@@ -130,6 +135,12 @@ public class ClientService {
 
         String path = String.format(CLIENT_LIVE_NODES + "/%s", clientName, getUuid());
         addToLiveNodes(path);
+    }
+
+    boolean removeFromClientLiveNodes(String clientName) {
+
+        String path = String.format(CLIENT_LIVE_NODES + "/%s", clientName, getUuid());
+        return removeFromLiveNodes(path);
     }
 
     String getUuid() {
@@ -152,16 +163,26 @@ public class ClientService {
             }
         });
 
-        List<String> allowedNodes = zkClient.subscribeChildChanges(nodeAllowedPath, new IZkChildListener() {
+        zkClient.subscribeDataChanges(nodeAllowedPath, new IZkDataListener() {
             @Override
-            public void handleChildChange(String parentPath, List<String> list) throws Exception {
+            public void handleDataChange(String s, Object o) throws Exception {
                 try {
+                    Message<EVENTS> message = MessageBuilder
+                            .withPayload(EVENTS.ZK_CLIENT_CHANGE_EVENT_RECEIVED)
+                            .setHeader(FOLLOWED_CLIENT, true)
+                            .build();
+                    stateMachine.sendEvent(message);
 
-                    buildAndSendUpdatedMessage(clientName, EVENTS.ZK_STRATEGIES_EVENT_RECEIVED);
-                }catch(IllegalStateException ex){
-                    log.error(String.format("node %s in illegal status, deleting",clientName));
+                } catch (IllegalStateException ex) {
+                    log.error(String.format("node %s in illegal status, deleting", clientName));
                 }
             }
+
+            @Override
+            public void handleDataDeleted(String s) throws Exception {
+
+            }
+
         });
 
         List<String> liveNodes = zkClient.subscribeChildChanges(liveNodesPath, new IZkChildListener() {
@@ -169,8 +190,8 @@ public class ClientService {
             public void handleChildChange(String parentPath, List<String> list) throws Exception {
                 try {
                     buildAndSendUpdatedMessage(clientName, EVENTS.ZK_STRATEGIES_EVENT_RECEIVED);
-                }catch(IllegalStateException ex){
-                    log.error(String.format("node %s in illegal status, deleting",clientName));
+                } catch (IllegalStateException ex) {
+                    log.error(String.format("node %s in illegal status, deleting", clientName));
                 }
             }
         });
@@ -179,8 +200,8 @@ public class ClientService {
             public void handleChildChange(String parentPath, List<String> list) throws Exception {
                 try {
                     buildAndSendUpdatedMessage(clientName, EVENTS.ZK_STRATEGIES_EVENT_RECEIVED);
-                }catch(IllegalStateException ex){
-                    log.error(String.format("node %s in illegal status, deleting",clientName));
+                } catch (IllegalStateException ex) {
+                    log.error(String.format("node %s in illegal status, deleting", clientName));
                 }
 
             }
@@ -318,6 +339,12 @@ public class ClientService {
     void addToLiveNodes(String nodeName) {
 
         String path = zkClient.create(nodeName, "", ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
+
+    }
+
+    boolean removeFromLiveNodes(String nodeName) {
+
+        return zkClient.delete(nodeName);
 
     }
 

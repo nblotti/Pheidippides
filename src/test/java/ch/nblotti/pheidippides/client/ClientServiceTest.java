@@ -20,6 +20,7 @@ import java.util.List;
 import static ch.nblotti.pheidippides.client.ClientService.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doReturn;
 
 
 @ExtendWith(MockitoExtension.class)
@@ -107,6 +108,29 @@ class ClientServiceTest {
   }
 
   @Test
+  void findAllClientNoCLientWithNoZeroNodeAllowed() {
+
+
+    String firstClient = "1";
+    List<String> clients = new ArrayList<>();
+    clients.add(firstClient);
+
+    List<String> returnedFreeClient = mock(List.class);
+    when(returnedFreeClient.size()).thenReturn(1);
+    doReturn(clients).when(clientService).findAllClient();
+
+    doReturn(returnedFreeClient).when(clientService).getLiveNodes(firstClient);
+
+    doReturn(0).when(clientService).getNodeAllowed(firstClient);
+
+
+    String returned = clientService.selectFreeClient();
+
+    Assert.assertNull(returned);
+
+  }
+
+  @Test
   void selectFreeClientLiveNodesZero() {
 
     String firstClient = "1";
@@ -128,6 +152,11 @@ class ClientServiceTest {
     doReturn(returnedNotFreeClient).when(clientService).getLiveNodes(firstClient);
     doReturn(returnedNotFreeClient).when(clientService).getLiveNodes(secondClient);
     doReturn(returnedFreeClient).when(clientService).getLiveNodes(thirdClient);
+
+    doReturn(1).when(clientService).getNodeAllowed(firstClient);
+    doReturn(1).when(clientService).getNodeAllowed(secondClient);
+    doReturn(1).when(clientService).getNodeAllowed(thirdClient);
+
 
     String returned = clientService.selectFreeClient();
 
@@ -287,7 +316,7 @@ class ClientServiceTest {
 
     clientService.registerToStrategyChanges(clientStr);
 
-    verify(zkClient, times(4)).subscribeChildChanges(anyString(), any(IZkChildListener.class));
+    verify(zkClient, times(3)).subscribeChildChanges(anyString(), any(IZkChildListener.class));
 
 
   }

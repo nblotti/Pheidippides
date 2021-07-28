@@ -2,6 +2,7 @@ package ch.nblotti.pheidippides.statemachine;
 
 public enum EVENTS {
   EVENT_RECEIVED,
+  WAIT_FOR_CLIENT,
   ZK_DB_EVENT_RECEIVED,
   ZK_STRATEGIES_EVENT_RECEIVED,
   ZK_CLIENT_CHANGE_EVENT_RECEIVED,

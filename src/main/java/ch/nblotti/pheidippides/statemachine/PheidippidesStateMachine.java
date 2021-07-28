@@ -28,6 +28,7 @@ public class PheidippidesStateMachine extends EnumStateMachineConfigurerAdapter<
         states.withStates()
                 .initial(STATES.READY)
                 .state(STATES.INIT_ZOOKEEPER)
+                .state(STATES.NO_FREE_CLIENT)
                 .state(STATES.INIT_DATABASE)
                 .state(STATES.INIT_STREAMS)
                 .state(STATES.WAIT_FOR_EVENT)
@@ -45,6 +46,13 @@ public class PheidippidesStateMachine extends EnumStateMachineConfigurerAdapter<
     public void configure(StateMachineTransitionConfigurer<STATES, EVENTS> transitions) throws Exception {
         transitions.withExternal()
                 .source(STATES.READY).target(STATES.INIT_ZOOKEEPER).event(EVENTS.EVENT_RECEIVED)
+                .and()
+                .withExternal()
+
+                .source(STATES.INIT_ZOOKEEPER).target(STATES.NO_FREE_CLIENT).event(EVENTS.WAIT_FOR_CLIENT)
+                .and()
+                .withExternal()
+                .source(STATES.NO_FREE_CLIENT).target(STATES.INIT_ZOOKEEPER).event(EVENTS.SUCCESS)
                 .and()
                 .withExternal()
                 .source(STATES.INIT_ZOOKEEPER).target(STATES.INIT_DATABASE).event(EVENTS.SUCCESS)
