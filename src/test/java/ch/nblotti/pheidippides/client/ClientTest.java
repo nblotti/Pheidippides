@@ -19,6 +19,34 @@ class ClientTest {
     public static final String URL = "URL";
     public static final String PASSWORD = "Password";
 
+
+    @Test
+    void getUserName() {
+
+        String userName = "nblotti";
+        ClientDBInfo clientDBInfo = mock(ClientDBInfo.class);
+
+        List<StrategiesDTO> strategies = Collections.emptyList();
+
+        Client client = new Client(userName, clientDBInfo, strategies);
+
+        Assert.assertEquals(userName, client.getUserName());
+    }
+
+    @Test
+    void getStrategies() {
+
+        String userName = "nblotti";
+        ClientDBInfo clientDBInfo = mock(ClientDBInfo.class);
+
+        List<StrategiesDTO> strategies = Collections.emptyList();
+
+        Client client = new Client(userName, clientDBInfo, strategies);
+
+        Assert.assertEquals(strategies, client.getStrategies());
+    }
+
+
     @Test
     void getDbUser() {
 
