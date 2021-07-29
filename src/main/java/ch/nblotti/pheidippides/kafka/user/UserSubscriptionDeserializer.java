@@ -1,5 +1,6 @@
 package ch.nblotti.pheidippides.kafka.user;
 
+import ch.nblotti.pheidippides.GeneratedExcludeJacocoTestCoverage;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.Nulls;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -18,6 +19,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @Slf4j
+@GeneratedExcludeJacocoTestCoverage
 public class UserSubscriptionDeserializer implements Deserializer<UserSubscription> {
 
 

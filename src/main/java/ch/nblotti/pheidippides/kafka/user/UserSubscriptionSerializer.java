@@ -1,5 +1,6 @@
 package ch.nblotti.pheidippides.kafka.user;
 
+import ch.nblotti.pheidippides.GeneratedExcludeJacocoTestCoverage;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -13,6 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 
 @Slf4j
+@GeneratedExcludeJacocoTestCoverage
 public class UserSubscriptionSerializer implements Serializer<UserSubscription> {
 
     ObjectMapper objectMapper = new ObjectMapper();
