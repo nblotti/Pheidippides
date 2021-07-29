@@ -37,10 +37,14 @@ public class PheidippidesTopology {
 
 
     private ValueJoiner<Container, String, ContainerWithQuote> containerWithQuoteJoiner() {
-        return (container, quote) -> new ContainerWithQuote(container, quote);
+        return new ValueJoiner<Container, String, ContainerWithQuote>() {
+            @Override
+            public ContainerWithQuote apply(Container container, String quote) {
+                return new ContainerWithQuote(container, quote);
+            }
+        };
     }
 
-    ;
 
     private Predicate<QuoteKeyWrapper, QuoteWrapper> thombstoneOrDeleteOperationPredicate() {
         return (key, value) ->
