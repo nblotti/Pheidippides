@@ -17,7 +17,7 @@ import javax.persistence.Table;
 public class StockFundamentalMonthlyTO extends StockFundamentalTO {
 
     @Column(name = "MONTH_NUMBER")
-    int month_number;
+    int monthNumber;
 
 
 

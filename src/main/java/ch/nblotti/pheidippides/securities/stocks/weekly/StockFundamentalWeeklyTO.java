@@ -15,6 +15,6 @@ import javax.persistence.*;
 public class StockFundamentalWeeklyTO extends StockFundamentalTO {
 
     @Column(name = "WEEK_NUMBER")
-    int week_number;
+    int weekNumber;
 
 }

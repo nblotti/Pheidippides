@@ -10,5 +10,5 @@ import javax.persistence.Table;
 @Table(name = "STOCK_BASIC_WEEKLY")
 public class StockBasicWeeklyTO extends StockBasicTO {
     @Column(name = "WEEK_NUMBER")
-    int week_number;
+    int weekNumber;
 }

@@ -59,14 +59,14 @@ class PheidippidesTopologyTest {
     //https://kafka.apache.org/documentation/streams/developer-guide/testing.html
 
     @Test
-    public void kafkaStreamRead() {
+    void kafkaStreamRead() {
 
         Properties streamConfiguration = new Properties();
 
         streamConfiguration.setProperty(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
         streamConfiguration.setProperty(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass().getName());
 
-        PheidippidesTopology pheidippidesTopology = new PheidippidesTopology(quoteTopic, monthlyQuoteTopicFiltred, userSubscriptionTopic,userSubscriptionTopicFiltred);
+        PheidippidesTopology pheidippidesTopology = new PheidippidesTopology(quoteTopic, monthlyQuoteTopicFiltred, userSubscriptionTopic, userSubscriptionTopicFiltred);
         UserSubscriptionSerdes userSubscriptionSerdes = new UserSubscriptionSerdes();
 
         doReturn(Boolean.TRUE).when(quoteFilter).filter(any(), any());
@@ -82,8 +82,6 @@ class PheidippidesTopologyTest {
         userSubscription.setStocks(Arrays.asList("AAPL", "GOOGL", "YAHOO"));
         userSubscription.setEtfs(null);
         userSubscriptions.pipeInput("client1", userSubscription);
-
-
 
 
         String firstQuoteValue = "{\"payload\":{\"after\":{\"id\":\"1\",\"exchange\":\"US\",\"code\":\"YAHOO\",\"gic_sector\":\"GIC\",\"month_number\":\"1\",\"year\":\"2021\",\"type\":\"MONTH\",\"median_adjusted_close\":\"1.0\",\"median_market_cap\":\"1.0\",\"median_volume\":\"1.0\",\"avg_adjusted_close\":\"1.0\",\"avg_market_cap\":\"1.0\",\"avg_volume\":\"1.0\",\"updated_date\":\"18628\"},\"op\":\"c\",\"ts_ms\":\"1627123020382\",\"transaction\":\"null\"}}";
@@ -108,13 +106,13 @@ class PheidippidesTopologyTest {
 
         KeyValue<QuoteKeyWrapper, QuoteWrapper> firstResult = outputTopic.readKeyValue();
         Assert.assertEquals("keyKey1", new String(firstResult.key.getIn()));
-        Assert.assertEquals("YAHOO",firstResult.value.getCode());
-        Assert.assertEquals(SQL_OPERATION.CREATE,firstResult.value.getOperation());
+        Assert.assertEquals("YAHOO", firstResult.value.getCode());
+        Assert.assertEquals(SQL_OPERATION.CREATE, firstResult.value.getOperation());
 
         KeyValue<QuoteKeyWrapper, QuoteWrapper> secondResult = outputTopic.readKeyValue();
-        Assert.assertEquals("keyKey3",new String(secondResult.key.getIn()));
-        Assert.assertEquals("GOOGL",secondResult.value.getCode());
-        Assert.assertEquals(SQL_OPERATION.CREATE,secondResult.value.getOperation());
+        Assert.assertEquals("keyKey3", new String(secondResult.key.getIn()));
+        Assert.assertEquals("GOOGL", secondResult.value.getCode());
+        Assert.assertEquals(SQL_OPERATION.CREATE, secondResult.value.getOperation());
 
 
         Exception exception = assertThrows(NoSuchElementException.class, () -> {

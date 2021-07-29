@@ -31,7 +31,7 @@ public class MonthlyQuoteFilterImplTest {
     }
 
     @Test
-    public void filterEmptyEntry() {
+    void filterEmptyEntry() {
 
         QuoteKeyWrapper quoteKey = Mockito.mock(QuoteKeyWrapper.class);
         QuoteWrapper quote = Mockito.mock(QuoteWrapper.class);
@@ -45,7 +45,7 @@ public class MonthlyQuoteFilterImplTest {
     }
 
     @Test
-    public void filterErrorEntry() {
+    void filterErrorEntry() {
 
         QuoteKeyWrapper quoteKey = Mockito.mock(QuoteKeyWrapper.class);
         QuoteWrapper quote = Mockito.mock(QuoteWrapper.class);
@@ -59,7 +59,7 @@ public class MonthlyQuoteFilterImplTest {
     }
 
     @Test
-    public void filterDeleteEntry() {
+    void filterDeleteEntry() {
 
         QuoteKeyWrapper quoteKey = Mockito.mock(QuoteKeyWrapper.class);
         QuoteWrapper quote = Mockito.mock(QuoteWrapper.class);
@@ -72,7 +72,7 @@ public class MonthlyQuoteFilterImplTest {
         Assert.assertTrue(returned);
     }
 
-    public void filterReadEntry() {
+    void filterReadEntry() {
 
         QuoteWrapper quote = Mockito.mock(QuoteWrapper.class);
         when(quote.getOperation()).thenReturn(SQL_OPERATION.READ);

@@ -1,7 +1,5 @@
 package ch.nblotti.pheidippides.kafka.quote;
 
-import static ch.nblotti.pheidippides.kafka.quote.SQL_OPERATION.EMPTY;
-
 public class QuoteFilterImpl implements QuoteFilter<QuoteKeyWrapper, QuoteWrapper> {
 
 

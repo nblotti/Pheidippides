@@ -5,7 +5,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.persistence.*;
-import java.time.LocalDate;
 
 @Getter
 @Setter
@@ -44,7 +43,6 @@ public abstract class StockBasicTO {
 
     @Column(name = "GIC_SUB_INDUSTRY")
     String gicSubIndustry;
-
 
 
     @Column(name = "MEDIAN_MARKET_CAP")

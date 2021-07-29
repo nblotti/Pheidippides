@@ -70,7 +70,7 @@ public class PheidippidesStateMachineListener {
         ClientDTO clientDTO = (ClientDTO) extendedState.getVariables().get(CURRENT_CLIENT);
 
 
-        if (followedClient) {
+        if (Boolean.TRUE.equals(followedClient)) {
             kafkaConnectManager.deleteStockConnector(clientDTO);
             kafkaStreamManager.deleteTopic(clientDTO);
         }

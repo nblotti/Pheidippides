@@ -10,5 +10,5 @@ import javax.persistence.Table;
 @Table(name = "ETF_WEEKLY")
 public class EtfWeeklyTo extends EtfTo {
     @Column(name = "WEEK_NUMBER")
-    int week_number;
+    int weekNumber;
 }

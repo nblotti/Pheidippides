@@ -11,5 +11,5 @@ import javax.persistence.Table;
 public class EtfMonthlyTo extends EtfTo {
 
     @Column(name = "MONTH_NUMBER")
-    int month_number;
+    int monthNumber;
 }

@@ -52,7 +52,7 @@ class PheidippidesStateMachineTest {
     }
 
     @Test
-    public void testReady() throws Exception {
+    void testReady() throws Exception {
 
         StateMachineTestPlan<STATES, EVENTS> plan =
                 StateMachineTestPlanBuilder.<STATES, EVENTS>builder()

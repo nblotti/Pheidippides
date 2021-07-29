@@ -48,7 +48,7 @@ public class EtfTo {
     private double totalAssets;
 
     @Column(name = "AVERAGE_MKT_CAP_MIL")
-    private double average_Mkt_Cap_Mil;
+    private double averageMktCapMil;
 
     @Column(name = "BASIC_MATERIALS")
     private double basicMaterials;

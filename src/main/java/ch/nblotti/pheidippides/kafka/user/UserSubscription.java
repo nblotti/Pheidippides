@@ -3,7 +3,6 @@ package ch.nblotti.pheidippides.kafka.user;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.util.Collections;
 import java.util.List;
@@ -13,9 +12,8 @@ import java.util.List;
 @NoArgsConstructor
 public class UserSubscription {
 
-    public List<String> stocks =Collections.emptyList();
-    public List<String> etfs =Collections.emptyList();
-
+    private List<String> stocks = Collections.emptyList();
+    private List<String> etfs = Collections.emptyList();
 
 
     public void setStocks(List<String> stocks) {
