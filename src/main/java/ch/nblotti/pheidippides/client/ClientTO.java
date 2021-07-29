@@ -1,24 +1,33 @@
 package ch.nblotti.pheidippides.client;
 
 import ch.nblotti.pheidippides.GeneratedExcludeJacocoTestCoverage;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
 
 import java.util.List;
 
-
-@AllArgsConstructor
-@NoArgsConstructor
+@GeneratedExcludeJacocoTestCoverage
 public class ClientTO {
 
-    @Getter
-    private String userName;
 
-    private ClientDBInfo clientDBInfo;
 
-    @Getter
-    private List<StrategiesDTO> strategies;
+    private final String userName;
+
+    private final ClientDBInfo clientDBInfo;
+
+    private final List<StrategiesDTO> strategies;
+
+    public ClientTO(String userName, ClientDBInfo clientDBInfo, List<StrategiesDTO> strategies) {
+        this.userName = userName;
+        this.clientDBInfo = clientDBInfo;
+        this.strategies = strategies;
+    }
+
+    public List<StrategiesDTO> getStrategies() {
+        return strategies;
+    }
+
+    public String getUserName() {
+        return userName;
+    }
 
     public String getDbUrl() {
         return clientDBInfo.getDbUrl();
