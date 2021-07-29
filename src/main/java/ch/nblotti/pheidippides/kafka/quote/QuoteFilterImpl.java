@@ -7,8 +7,11 @@ public class QuoteFilterImpl implements QuoteFilter<QuoteKeyWrapper, QuoteWrappe
     public boolean filter(QuoteKeyWrapper key, QuoteWrapper value) {
 
 
+        if (key == null)
+            throw new IllegalStateException("key can't be null");
+
         //Thombstone delete event
-        if (key != null && value == null)
+        if (value == null)
             return true;
 
         switch (value.getOperation()) {
