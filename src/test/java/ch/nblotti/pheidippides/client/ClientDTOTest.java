@@ -20,7 +20,7 @@ class ClientDTOTest {
     public static final String PASSWORD = "Password";
 
     @Test
-    void subscribe() {
+    void getDbUser() {
 
         String userName = "nblotti";
         ClientDBInfo clientDBInfo = mock(ClientDBInfo.class);
@@ -28,13 +28,36 @@ class ClientDTOTest {
         List<StrategiesDTO> strategies = Collections.emptyList();
 
         when(clientDBInfo.getDbUser()).thenReturn(USER);
-        when(clientDBInfo.getDbUrl()).thenReturn(URL);
-        when(clientDBInfo.getDbPassword()).thenReturn(PASSWORD);
 
         ClientDTO clientDTO = new ClientDTO(userName, clientDBInfo, strategies);
 
         Assert.assertEquals(USER, clientDTO.getDbUser());
+    }
+    @Test
+    void getDbUrl() {
+
+        String userName = "nblotti";
+        ClientDBInfo clientDBInfo = mock(ClientDBInfo.class);
+        List<StrategiesDTO> strategies = Collections.emptyList();
+
+        when(clientDBInfo.getDbUrl()).thenReturn(URL);
+
+        ClientDTO clientDTO = new ClientDTO(userName, clientDBInfo, strategies);
+
         Assert.assertEquals(URL, clientDTO.getDbUrl());
+    }
+    @Test
+    void getDbPassword() {
+
+        String userName = "nblotti";
+        ClientDBInfo clientDBInfo = mock(ClientDBInfo.class);
+
+        List<StrategiesDTO> strategies = Collections.emptyList();
+
+        when(clientDBInfo.getDbPassword()).thenReturn(PASSWORD);
+
+        ClientDTO clientDTO = new ClientDTO(userName, clientDBInfo, strategies);
+
         Assert.assertEquals(PASSWORD, clientDTO.getDbPassword());
     }
 }
