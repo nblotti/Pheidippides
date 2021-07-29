@@ -41,13 +41,15 @@ public class KafkaConnectManager {
 
     }
 
-    public void deleteStockConnector(ClientDTO clientDTO) {
+    public boolean deleteStockConnector(ClientDTO clientDTO) {
         String formatedConnectorMonthlyQuoteUrl = String.format(connectorQuoteUrl, clientDTO.getUserName());
         try {
             restTemplate.delete(formatedConnectorMonthlyQuoteUrl);
+            return true;
 
         } catch (HttpStatusCodeException exception) {
             log.error(exception.getMessage());
+            return false;
         }
 
     }
