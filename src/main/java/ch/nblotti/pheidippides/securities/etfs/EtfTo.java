@@ -39,7 +39,7 @@ public class EtfTo {
     private String category;
 
     @Column(name = "YIELD")
-    private double yield;
+    private double etfYield;
 
     @Column(name = "NET_EXPENSE_RATIO")
     private double netExpenseRatio;

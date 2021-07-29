@@ -16,13 +16,13 @@ public class QuoteDeserializer implements Deserializer<QuoteWrapper> {
     public static final String PAYLOAD = "payload";
     public static final String CODE = "code";
     private final ObjectMapper mapper = new ObjectMapper();
-    private JsonNode content;
+
 
 
     @Override
     public QuoteWrapper deserialize(String s, byte[] in) {
 
-
+        JsonNode content;
         QuoteWrapper quote = new QuoteWrapper();
         quote.setIn(in);
 

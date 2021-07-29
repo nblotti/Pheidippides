@@ -1,5 +1,7 @@
 package ch.nblotti.pheidippides.kafka.quote;
 
+import static ch.nblotti.pheidippides.kafka.quote.SQL_OPERATION.EMPTY;
+
 public class QuoteFilterImpl implements QuoteFilter<QuoteKeyWrapper, QuoteWrapper> {
 
 
@@ -8,17 +10,17 @@ public class QuoteFilterImpl implements QuoteFilter<QuoteKeyWrapper, QuoteWrappe
 
 
         //Thombstone delete event
-        if (key != null && value == null || value.getOperation().equals(SQL_OPERATION.EMPTY))
-            return true;
-        if (value.getOperation().equals(SQL_OPERATION.ERROR))
-            return false;
-        if (value.getOperation().equals(SQL_OPERATION.DELETE))
-            return true;
-        if (value.getOperation().equals(SQL_OPERATION.CREATE))
+        if (key != null && value == null)
             return true;
 
-
-        return false;
+        switch (value.getOperation()) {
+            case EMPTY:
+            case DELETE:
+            case CREATE:
+                return true;
+            default:
+                return false;
+        }
     }
 
 

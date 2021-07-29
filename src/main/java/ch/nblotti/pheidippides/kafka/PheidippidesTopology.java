@@ -37,12 +37,7 @@ public class PheidippidesTopology {
 
 
     private ValueJoiner<Container, String, ContainerWithQuote> containerWithQuoteJoiner() {
-        return new ValueJoiner<Container, String, ContainerWithQuote>() {
-            @Override
-            public ContainerWithQuote apply(Container container, String quote) {
-                return new ContainerWithQuote(container, quote);
-            }
-        };
+        return (container, quote) -> new ContainerWithQuote(container, quote);
     }
 
 
@@ -51,7 +46,6 @@ public class PheidippidesTopology {
                 (key != null && value == null) || value.getOperation().equals(SQL_OPERATION.DELETE) || value.getOperation().equals(SQL_OPERATION.EMPTY);
     }
 
-    ;
 
     private Predicate<QuoteKeyWrapper, QuoteWrapper> operationToFilterPredicate() {
         return (key, value) -> key != null && value != null && !value.getOperation().equals(SQL_OPERATION.DELETE);
