@@ -11,6 +11,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 class QuoteDeserializerTest {
 
@@ -54,6 +55,18 @@ class QuoteDeserializerTest {
 
         assertEquals(SQL_OPERATION.READ, quote.getOperation());
         assertEquals(aapl, quote.getCode());
+
+    }
+
+    @Test
+    void deserializeDeleteOperation() {
+
+
+        byte[] value = ("{\"payload\":{\"op\":\"d\"}}").getBytes(StandardCharsets.UTF_8);
+        QuoteWrapper quote = quoteDeserializer.deserialize(null, value);
+
+        assertEquals(SQL_OPERATION.DELETE, quote.getOperation());
+        assertNull( quote.getCode());
 
     }
 
