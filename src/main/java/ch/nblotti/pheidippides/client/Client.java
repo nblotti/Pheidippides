@@ -1,11 +1,8 @@
 package ch.nblotti.pheidippides.client;
 
-import ch.nblotti.pheidippides.GeneratedExcludeJacocoTestCoverage;
-
 import java.util.List;
 
-public class ClientTO {
-
+public class Client {
 
 
     private final String userName;
@@ -14,7 +11,7 @@ public class ClientTO {
 
     private final List<StrategiesDTO> strategies;
 
-    public ClientTO(String userName, ClientDBInfo clientDBInfo, List<StrategiesDTO> strategies) {
+    public Client(String userName, ClientDBInfo clientDBInfo, List<StrategiesDTO> strategies) {
         this.userName = userName;
         this.clientDBInfo = clientDBInfo;
         this.strategies = strategies;

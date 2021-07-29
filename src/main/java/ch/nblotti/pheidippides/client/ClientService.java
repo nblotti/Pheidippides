@@ -75,9 +75,9 @@ public class ClientService {
 
     }
 
-    public void unSubscribe(ClientTO clientTO) {
+    public void unSubscribe(Client client) {
         zkClient.unsubscribeAll();
-        removeFromClientLiveNodes(clientTO.getUserName());
+        removeFromClientLiveNodes(client.getUserName());
 
     }
 
@@ -90,11 +90,11 @@ public class ClientService {
         // read client strategy related info and send a message to subscribers
         List<StrategiesDTO> strategies = chooseStrategy(clientName);
 
-        ClientTO clientTO = new ClientTO(clientName, clientDBinfo, strategies);
+        Client client = new Client(clientName, clientDBinfo, strategies);
 
         Message<EVENTS> message = MessageBuilder
                 .withPayload(events)
-                .setHeader(NEW_CLIENT, clientTO)
+                .setHeader(NEW_CLIENT, client)
                 .build();
 
         stateMachine.sendEvent(message);

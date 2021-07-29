@@ -1,6 +1,6 @@
 package ch.nblotti.pheidippides.datasource;
 
-import ch.nblotti.pheidippides.client.ClientTO;
+import ch.nblotti.pheidippides.client.Client;
 import ch.nblotti.pheidippides.statemachine.EVENTS;
 import ch.nblotti.pheidippides.statemachine.STATES;
 import lombok.extern.slf4j.Slf4j;
@@ -51,7 +51,7 @@ public class RoutingDataSource extends AbstractRoutingDataSource {
         return dataSources.get(lookupKey);
     }
 
-    public void createDataSource(ClientTO clientTO) {
+    public void createDataSource(Client client) {
         Message<EVENTS> message;
 
         try {
@@ -64,12 +64,12 @@ public class RoutingDataSource extends AbstractRoutingDataSource {
                 dataSources.remove(DataSourceEnum.HSQL);
             }
             DriverManagerDataSource dataSource = new DriverManagerDataSource();
-            dataSource.setUrl(clientTO.getDbUrl());
-            dataSource.setUsername(clientTO.getDbUser());
-            dataSource.setPassword(clientTO.getDbPassword());
+            dataSource.setUrl(client.getDbUrl());
+            dataSource.setUsername(client.getDbUser());
+            dataSource.setPassword(client.getDbPassword());
 
             Flyway flyway = Flyway.configure()
-                    .dataSource(clientTO.getDbUrl(), clientTO.getDbUser(), clientTO.getDbPassword())
+                    .dataSource(client.getDbUrl(), client.getDbUser(), client.getDbPassword())
                     .locations(DB_MIGRATION_LOCATION)
                     .load();
             flyway.migrate();
@@ -78,7 +78,7 @@ public class RoutingDataSource extends AbstractRoutingDataSource {
 
             message = MessageBuilder
                     .withPayload(EVENTS.SUCCESS)
-                    .setHeader(NEW_CLIENT, clientTO)
+                    .setHeader(NEW_CLIENT, client)
                     .build();
         } catch (Exception ex) {
             message = MessageBuilder

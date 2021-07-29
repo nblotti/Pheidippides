@@ -29,9 +29,9 @@ class ClientTest {
 
         when(clientDBInfo.getDbUser()).thenReturn(USER);
 
-        ClientTO clientTO = new ClientTO(userName, clientDBInfo, strategies);
+        Client client = new Client(userName, clientDBInfo, strategies);
 
-        Assert.assertEquals(USER, clientTO.getDbUser());
+        Assert.assertEquals(USER, client.getDbUser());
     }
     @Test
     void getDbUrl() {
@@ -42,9 +42,9 @@ class ClientTest {
 
         when(clientDBInfo.getDbUrl()).thenReturn(URL);
 
-        ClientTO clientTO = new ClientTO(userName, clientDBInfo, strategies);
+        Client client = new Client(userName, clientDBInfo, strategies);
 
-        Assert.assertEquals(URL, clientTO.getDbUrl());
+        Assert.assertEquals(URL, client.getDbUrl());
     }
     @Test
     void getDbPassword() {
@@ -56,8 +56,8 @@ class ClientTest {
 
         when(clientDBInfo.getDbPassword()).thenReturn(PASSWORD);
 
-        ClientTO clientTO = new ClientTO(userName, clientDBInfo, strategies);
+        Client client = new Client(userName, clientDBInfo, strategies);
 
-        Assert.assertEquals(PASSWORD, clientTO.getDbPassword());
+        Assert.assertEquals(PASSWORD, client.getDbPassword());
     }
 }

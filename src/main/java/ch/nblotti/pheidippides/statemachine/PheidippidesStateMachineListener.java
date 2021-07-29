@@ -1,6 +1,6 @@
 package ch.nblotti.pheidippides.statemachine;
 
-import ch.nblotti.pheidippides.client.ClientTO;
+import ch.nblotti.pheidippides.client.Client;
 import ch.nblotti.pheidippides.client.ClientService;
 import ch.nblotti.pheidippides.datasource.RoutingDataSource;
 import ch.nblotti.pheidippides.kafka.KafkaConnectManager;
@@ -48,7 +48,7 @@ public class PheidippidesStateMachineListener {
     }
 
     @StatesOnEntry(target = STATES.INIT_DATABASE)
-    public void initDatabase(@EventHeader ClientTO newClient) {
+    public void initDatabase(@EventHeader Client newClient) {
 
         routingDataSource.createDataSource(newClient);
 
@@ -56,7 +56,7 @@ public class PheidippidesStateMachineListener {
     }
 
     @StatesOnEntry(target = STATES.INIT_STREAMS)
-    public void initStreams(@EventHeader ClientTO newClient, ExtendedState extendedState) {
+    public void initStreams(@EventHeader Client newClient, ExtendedState extendedState) {
 
         extendedState.getVariables().put(CURRENT_CLIENT, newClient);
         kafkaConnectManager.initStockConnector(newClient);
@@ -67,15 +67,15 @@ public class PheidippidesStateMachineListener {
 
     @StatesOnEntry(target = STATES.TREATING_ZK_CLIENT_CHANGE_EVENT)
     public void treatingZKClientEvent(StateMachine<STATES, EVENTS> stateMachine, ExtendedState extendedState, @EventHeader Boolean followedClient) {
-        ClientTO clientTO = (ClientTO) extendedState.getVariables().get(CURRENT_CLIENT);
+        Client client = (Client) extendedState.getVariables().get(CURRENT_CLIENT);
 
 
         if (Boolean.TRUE.equals(followedClient)) {
-            kafkaConnectManager.deleteStockConnector(clientTO);
-            kafkaStreamManager.deleteTopic(clientTO);
+            kafkaConnectManager.deleteStockConnector(client);
+            kafkaStreamManager.deleteTopic(client);
         }
         kafkaStreamManager.doCloseStream();
-        clientService.unSubscribe(clientTO);
+        clientService.unSubscribe(client);
 
 
         log.info("Change detected in clients, closing connnection and restarting client election process");
@@ -84,7 +84,7 @@ public class PheidippidesStateMachineListener {
 
 
     @StatesOnEntry(target = STATES.TREATING_ZK_STRATEGIES_EVENT)
-    public void treatingZKStrategiesEvent(StateMachine<STATES, EVENTS> stateMachine, @EventHeader ClientTO newClient, ExtendedState extendedState) {
+    public void treatingZKStrategiesEvent(StateMachine<STATES, EVENTS> stateMachine, @EventHeader Client newClient, ExtendedState extendedState) {
 
         extendedState.getVariables().put(CURRENT_CLIENT, newClient);
         stateMachine.sendEvent(EVENTS.EVENT_TREATED);
@@ -93,10 +93,10 @@ public class PheidippidesStateMachineListener {
 
 
     @StatesOnEntry(target = STATES.TREATING_ZK_DB_EVENT)
-    public void treatingZKDBEvent(StateMachine<STATES, EVENTS> stateMachine, @EventHeader ClientTO newClient, ExtendedState extendedState) {
+    public void treatingZKDBEvent(StateMachine<STATES, EVENTS> stateMachine, @EventHeader Client newClient, ExtendedState extendedState) {
 
         try {
-            ClientTO oldClient = (ClientTO) extendedState.getVariables().get(CURRENT_CLIENT);
+            Client oldClient = (Client) extendedState.getVariables().get(CURRENT_CLIENT);
             kafkaStreamManager.doCloseStream();
             kafkaConnectManager.deleteStockConnector(oldClient);
 
