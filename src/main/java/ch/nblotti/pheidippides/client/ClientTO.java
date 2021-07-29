@@ -4,7 +4,6 @@ import ch.nblotti.pheidippides.GeneratedExcludeJacocoTestCoverage;
 
 import java.util.List;
 
-@GeneratedExcludeJacocoTestCoverage
 public class ClientTO {
 
 

@@ -12,7 +12,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class ClientTOTest {
+class ClientTest {
 
 
     public static final String USER = "User";
