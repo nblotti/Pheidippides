@@ -12,7 +12,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class ClientDTOTest {
+class ClientTOTest {
 
 
     public static final String USER = "User";
@@ -29,9 +29,9 @@ class ClientDTOTest {
 
         when(clientDBInfo.getDbUser()).thenReturn(USER);
 
-        ClientDTO clientDTO = new ClientDTO(userName, clientDBInfo, strategies);
+        ClientTO clientTO = new ClientTO(userName, clientDBInfo, strategies);
 
-        Assert.assertEquals(USER, clientDTO.getDbUser());
+        Assert.assertEquals(USER, clientTO.getDbUser());
     }
     @Test
     void getDbUrl() {
@@ -42,9 +42,9 @@ class ClientDTOTest {
 
         when(clientDBInfo.getDbUrl()).thenReturn(URL);
 
-        ClientDTO clientDTO = new ClientDTO(userName, clientDBInfo, strategies);
+        ClientTO clientTO = new ClientTO(userName, clientDBInfo, strategies);
 
-        Assert.assertEquals(URL, clientDTO.getDbUrl());
+        Assert.assertEquals(URL, clientTO.getDbUrl());
     }
     @Test
     void getDbPassword() {
@@ -56,8 +56,8 @@ class ClientDTOTest {
 
         when(clientDBInfo.getDbPassword()).thenReturn(PASSWORD);
 
-        ClientDTO clientDTO = new ClientDTO(userName, clientDBInfo, strategies);
+        ClientTO clientTO = new ClientTO(userName, clientDBInfo, strategies);
 
-        Assert.assertEquals(PASSWORD, clientDTO.getDbPassword());
+        Assert.assertEquals(PASSWORD, clientTO.getDbPassword());
     }
 }

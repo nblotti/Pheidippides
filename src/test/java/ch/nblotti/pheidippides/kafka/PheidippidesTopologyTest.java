@@ -1,12 +1,10 @@
 package ch.nblotti.pheidippides.kafka;
 
-import ch.nblotti.pheidippides.client.ClientDTO;
+import ch.nblotti.pheidippides.client.ClientTO;
 import ch.nblotti.pheidippides.kafka.quote.*;
 import ch.nblotti.pheidippides.kafka.user.UserSubscription;
 import ch.nblotti.pheidippides.kafka.user.UserSubscriptionSerdes;
-import org.apache.commons.lang3.SerializationUtils;
 import org.apache.kafka.common.serialization.Serdes;
-import org.apache.kafka.common.utils.Bytes;
 import org.apache.kafka.streams.*;
 import org.junit.Assert;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,7 +42,7 @@ class PheidippidesTopologyTest {
     QuoteFilterImpl quoteFilter;
 
     @Mock
-    ClientDTO clientDTO;
+    ClientTO clientTO;
 
 
     @BeforeEach
@@ -70,9 +68,9 @@ class PheidippidesTopologyTest {
         UserSubscriptionSerdes userSubscriptionSerdes = new UserSubscriptionSerdes();
 
         doReturn(Boolean.TRUE).when(quoteFilter).filter(any(), any());
-        when(clientDTO.getUserName()).thenReturn("client1");
+        when(clientTO.getUserName()).thenReturn("client1");
 
-        Topology topology = pheidippidesTopology.getTopology(clientDTO, "internalMapTopicName", "internalTransfodTopicName");
+        Topology topology = pheidippidesTopology.getTopology(clientTO, "internalMapTopicName", "internalTransfodTopicName");
         testDriver = new TopologyTestDriver(topology, streamConfiguration);
 
 
@@ -100,7 +98,7 @@ class PheidippidesTopologyTest {
 
         quoteTopic.pipeInput("keyKey3".getBytes(StandardCharsets.UTF_8), thirdQuoteValue.getBytes(StandardCharsets.UTF_8));
 
-        String quoteTopicFiltredStr = String.format(monthlyQuoteTopicFiltred, clientDTO.getUserName());
+        String quoteTopicFiltredStr = String.format(monthlyQuoteTopicFiltred, clientTO.getUserName());
 
         TestOutputTopic<QuoteKeyWrapper, QuoteWrapper> outputTopic = testDriver.createOutputTopic(quoteTopicFiltredStr, quoteKeySerdes.deserializer(), quoteSerdes.deserializer());
 

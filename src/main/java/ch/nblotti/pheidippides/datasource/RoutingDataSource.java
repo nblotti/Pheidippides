@@ -1,6 +1,6 @@
 package ch.nblotti.pheidippides.datasource;
 
-import ch.nblotti.pheidippides.client.ClientDTO;
+import ch.nblotti.pheidippides.client.ClientTO;
 import ch.nblotti.pheidippides.statemachine.EVENTS;
 import ch.nblotti.pheidippides.statemachine.STATES;
 import lombok.extern.slf4j.Slf4j;
@@ -14,7 +14,6 @@ import org.springframework.statemachine.StateMachine;
 import javax.sql.DataSource;
 import java.sql.SQLException;
 import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.Map;
 
 @Slf4j
@@ -52,7 +51,7 @@ public class RoutingDataSource extends AbstractRoutingDataSource {
         return dataSources.get(lookupKey);
     }
 
-    public void createDataSource(ClientDTO clientDTO) {
+    public void createDataSource(ClientTO clientTO) {
         Message<EVENTS> message;
 
         try {
@@ -65,12 +64,12 @@ public class RoutingDataSource extends AbstractRoutingDataSource {
                 dataSources.remove(DataSourceEnum.HSQL);
             }
             DriverManagerDataSource dataSource = new DriverManagerDataSource();
-            dataSource.setUrl(clientDTO.getDbUrl());
-            dataSource.setUsername(clientDTO.getDbUser());
-            dataSource.setPassword(clientDTO.getDbPassword());
+            dataSource.setUrl(clientTO.getDbUrl());
+            dataSource.setUsername(clientTO.getDbUser());
+            dataSource.setPassword(clientTO.getDbPassword());
 
             Flyway flyway = Flyway.configure()
-                    .dataSource(clientDTO.getDbUrl(), clientDTO.getDbUser(), clientDTO.getDbPassword())
+                    .dataSource(clientTO.getDbUrl(), clientTO.getDbUser(), clientTO.getDbPassword())
                     .locations(DB_MIGRATION_LOCATION)
                     .load();
             flyway.migrate();
@@ -79,7 +78,7 @@ public class RoutingDataSource extends AbstractRoutingDataSource {
 
             message = MessageBuilder
                     .withPayload(EVENTS.SUCCESS)
-                    .setHeader(NEW_CLIENT, clientDTO)
+                    .setHeader(NEW_CLIENT, clientTO)
                     .build();
         } catch (Exception ex) {
             message = MessageBuilder

@@ -10,8 +10,7 @@ import java.util.List;
 
 @AllArgsConstructor
 @NoArgsConstructor
-@GeneratedExcludeJacocoTestCoverage
-public class ClientDTO {
+public class ClientTO {
 
     @Getter
     private String userName;

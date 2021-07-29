@@ -1,6 +1,6 @@
 package ch.nblotti.pheidippides.kafka;
 
-import ch.nblotti.pheidippides.client.ClientDTO;
+import ch.nblotti.pheidippides.client.ClientTO;
 import ch.nblotti.pheidippides.statemachine.EVENTS;
 import ch.nblotti.pheidippides.statemachine.STATES;
 import io.apicurio.registry.utils.serde.AbstractKafkaSerDe;
@@ -16,7 +16,6 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsConfig;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.statemachine.StateMachine;
 
 import java.util.ArrayList;
@@ -59,12 +58,12 @@ public class KafkaStreamManager {
     private KafkaStreams streams;
 
 
-    public void doStartStream(ClientDTO clientDTO) throws IllegalStateException {
+    public void doStartStream(ClientTO clientTO) throws IllegalStateException {
 
         if (streams == null || streams.state() == KafkaStreams.State.NOT_RUNNING) {
 
-            Properties properties = initStreamConfig(clientDTO.getUserName());
-            start(properties, clientDTO);
+            Properties properties = initStreamConfig(clientTO.getUserName());
+            start(properties, clientTO);
             this.stateMachine.sendEvent(EVENTS.SUCCESS);
         } else {
             log.info("Stream already running !");
@@ -79,17 +78,17 @@ public class KafkaStreamManager {
     }
 
 
-    public void deleteTopic(ClientDTO clientDTO) {
+    public void deleteTopic(ClientTO clientTO) {
 
-        String internalMapTopicName = String.format(INTERNAL_MAP, clientDTO.getUserName());
-        String internalTransformedTopicName = String.format(INTERNAL_TRANSFORMED, clientDTO.getUserName());
-        String userSubscriptionTopicName = String.format(userSubscriptionTopic, clientDTO.getUserName());
-        String userSubscriptionTopicFiltredName = String.format(userSubscriptionTopicFiltred, clientDTO.getUserName());
+        String internalMapTopicName = String.format(INTERNAL_MAP, clientTO.getUserName());
+        String internalTransformedTopicName = String.format(INTERNAL_TRANSFORMED, clientTO.getUserName());
+        String userSubscriptionTopicName = String.format(userSubscriptionTopic, clientTO.getUserName());
+        String userSubscriptionTopicFiltredName = String.format(userSubscriptionTopicFiltred, clientTO.getUserName());
 
-        String quoteTopicFiltredName = String.format(quoteTopicFiltred, clientDTO.getUserName());
+        String quoteTopicFiltredName = String.format(quoteTopicFiltred, clientTO.getUserName());
 
 
-        Properties streamsConfiguration = initStreamConfig(clientDTO.getUserName());
+        Properties streamsConfiguration = initStreamConfig(clientTO.getUserName());
 
         AdminClient client = AdminClient.create(streamsConfiguration);
 
@@ -130,19 +129,19 @@ public class KafkaStreamManager {
     }
 
 
-    private void start(Properties streamsConfiguration, ClientDTO clientDTO) {
+    private void start(Properties streamsConfiguration, ClientTO clientTO) {
 
         //Topic initialisation
 
-        String internalMapTopicName = String.format(INTERNAL_MAP, clientDTO.getUserName());
-        String internalTransformedTopicName = String.format(INTERNAL_TRANSFORMED, clientDTO.getUserName());
-        String userSubscriptionTopicName = String.format(userSubscriptionTopic, clientDTO.getUserName());
-        String userSubscriptionTopicFiltredName = String.format(userSubscriptionTopicFiltred, clientDTO.getUserName());
-        String quoteTopicFiltredName = String.format(quoteTopicFiltred, clientDTO.getUserName());
+        String internalMapTopicName = String.format(INTERNAL_MAP, clientTO.getUserName());
+        String internalTransformedTopicName = String.format(INTERNAL_TRANSFORMED, clientTO.getUserName());
+        String userSubscriptionTopicName = String.format(userSubscriptionTopic, clientTO.getUserName());
+        String userSubscriptionTopicFiltredName = String.format(userSubscriptionTopicFiltred, clientTO.getUserName());
+        String quoteTopicFiltredName = String.format(quoteTopicFiltred, clientTO.getUserName());
 
         createTopic(streamsConfiguration, quoteTopicFiltredName,internalMapTopicName, internalTransformedTopicName, userSubscriptionTopicName, userSubscriptionTopicFiltredName);
 
-        streams = new KafkaStreams(pheidippidesTopology.getTopology(clientDTO, internalMapTopicName, internalTransformedTopicName), streamsConfiguration);
+        streams = new KafkaStreams(pheidippidesTopology.getTopology(clientTO, internalMapTopicName, internalTransformedTopicName), streamsConfiguration);
         Runtime.getRuntime().addShutdownHook(new Thread(streams::close));
         streams.start();
 

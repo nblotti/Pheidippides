@@ -1,6 +1,6 @@
 package ch.nblotti.pheidippides.kafka;
 
-import ch.nblotti.pheidippides.client.ClientDTO;
+import ch.nblotti.pheidippides.client.ClientTO;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
@@ -20,11 +20,11 @@ public class KafkaConnectManager {
     private String quoteTopicFiltred;
 
 
-    public ResponseEntity<String> initStockConnector(ClientDTO clientDTO) {
+    public ResponseEntity<String> initStockConnector(ClientTO clientTO) {
 
-        String formatedConnectPayload = buildConnnectorPayload(clientDTO);
+        String formatedConnectPayload = buildConnnectorPayload(clientTO);
 
-        String formatedConnectorQuoteUrl = String.format(connectorQuoteUrl, clientDTO.getUserName());
+        String formatedConnectorQuoteUrl = String.format(connectorQuoteUrl, clientTO.getUserName());
 
         HttpHeaders headers = new HttpHeaders();
         headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
@@ -41,8 +41,8 @@ public class KafkaConnectManager {
 
     }
 
-    public boolean deleteStockConnector(ClientDTO clientDTO) {
-        String formatedConnectorMonthlyQuoteUrl = String.format(connectorQuoteUrl, clientDTO.getUserName());
+    public boolean deleteStockConnector(ClientTO clientTO) {
+        String formatedConnectorMonthlyQuoteUrl = String.format(connectorQuoteUrl, clientTO.getUserName());
         try {
             restTemplate.delete(formatedConnectorMonthlyQuoteUrl);
             return true;
@@ -55,8 +55,8 @@ public class KafkaConnectManager {
     }
 
 
-    String buildConnnectorPayload(ClientDTO clientDTO) {
-        return String.format(connectPayload, clientDTO.getUserName(), clientDTO.getDbUrl(), clientDTO.getUserName(),clientDTO.getDbUser(), clientDTO.getDbPassword());
+    String buildConnnectorPayload(ClientTO clientTO) {
+        return String.format(connectPayload, clientTO.getUserName(), clientTO.getDbUrl(), clientTO.getUserName(), clientTO.getDbUser(), clientTO.getDbPassword());
     }
 
 

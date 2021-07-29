@@ -1,6 +1,6 @@
 package ch.nblotti.pheidippides.kafka;
 
-import ch.nblotti.pheidippides.client.ClientDTO;
+import ch.nblotti.pheidippides.client.ClientTO;
 import ch.nblotti.pheidippides.kafka.container.Container;
 import ch.nblotti.pheidippides.kafka.container.ContainerSerdes;
 import ch.nblotti.pheidippides.kafka.quote.*;
@@ -52,7 +52,7 @@ public class PheidippidesTopology {
     }
 
 
-    public Topology getTopology(ClientDTO clientDTO, String internalMapTopicName, String internalTransformedTopicName) {
+    public Topology getTopology(ClientTO clientTO, String internalMapTopicName, String internalTransformedTopicName) {
 
         final StreamsBuilder builder = new StreamsBuilder();
 
@@ -60,11 +60,11 @@ public class PheidippidesTopology {
         QuoteSerdes quoteSerdes = new QuoteSerdes();
 
 
-        String quoteTopicFiltredStr = String.format(quoteTopicFiltred, clientDTO.getUserName());
+        String quoteTopicFiltredStr = String.format(quoteTopicFiltred, clientTO.getUserName());
 
 
         // get subscribed quotes
-        GlobalKTable<String, String> userSubscriptions = getValueSubsribedStream(clientDTO, builder);
+        GlobalKTable<String, String> userSubscriptions = getValueSubsribedStream(clientTO, builder);
 
 
         KStream<QuoteKeyWrapper, QuoteWrapper> quoteTopicFiltredTopic = builder.stream(quoteTopic, Consumed.with(quoteKeySerdes, quoteSerdes));
@@ -105,13 +105,13 @@ public class PheidippidesTopology {
     }
 
     @NotNull
-    private GlobalKTable<String, String> getValueSubsribedStream(ClientDTO clientDTO, StreamsBuilder builder) {
+    private GlobalKTable<String, String> getValueSubsribedStream(ClientTO clientTO, StreamsBuilder builder) {
 
         UserSubscriptionSerdes userSubscriptionSerdes = new UserSubscriptionSerdes();
 
-        String userSubscriptionTopicFiltredStr = String.format(userSubscriptionTopicFiltred, clientDTO.getUserName());
+        String userSubscriptionTopicFiltredStr = String.format(userSubscriptionTopicFiltred, clientTO.getUserName());
 
-        Predicate<String, UserSubscription> isCurrentUser = (key, value) -> key.equals(clientDTO.getUserName());
+        Predicate<String, UserSubscription> isCurrentUser = (key, value) -> key.equals(clientTO.getUserName());
 
 
         KStream<String, UserSubscription> userSubscriptions = builder.stream(userSubscriptionTopic, Consumed.with(Serdes.String(), userSubscriptionSerdes));
