@@ -27,12 +27,8 @@ import java.util.Properties;
 public class StateMachineConfiguration {
 
 
-
     @Value("${global.full-date-format}")
     public String messageDateFormat;
-
-    @Autowired
-    private StateMachineFactory<STATES, EVENTS> stateMachineFactory;
 
 
     @Bean
@@ -43,16 +39,11 @@ public class StateMachineConfiguration {
 
     @Bean("stateMachine")
     @Scope("singleton")
-    public StateMachine<STATES, EVENTS> stateMachine() {
+    public StateMachine<STATES, EVENTS> stateMachine(StateMachineFactory<STATES, EVENTS> stateMachineFactory) {
 
         return stateMachineFactory.getStateMachine();
 
     }
 
-
-    @EventListener(ApplicationReadyEvent.class)
-    public void doSomethingAfterStartup() {
-        stateMachine().sendEvent(EVENTS.EVENT_RECEIVED);
-    }
 
 }

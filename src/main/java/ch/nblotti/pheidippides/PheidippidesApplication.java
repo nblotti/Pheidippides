@@ -41,8 +41,12 @@ import java.util.Properties;
         DataSourceTransactionManagerAutoConfiguration.class,
         HibernateJpaAutoConfiguration.class,
         FlywayAutoConfiguration.class})
+@GeneratedExcludeJacocoTestCoverage
 @Slf4j
 public class PheidippidesApplication {
+
+    @Autowired
+    StateMachine<STATES, EVENTS> stateMachine;
 
     public static void main(String[] args) {
         SpringApplication.run(PheidippidesApplication.class, args);
@@ -57,6 +61,12 @@ public class PheidippidesApplication {
                 .setConnectTimeout(Duration.ofSeconds(30))
                 .setReadTimeout(Duration.ofMinutes(5))
                 .build();
+    }
+
+
+    @EventListener(ApplicationReadyEvent.class)
+    public void doSomethingAfterStartup() {
+        stateMachine.sendEvent(EVENTS.EVENT_RECEIVED);
     }
 
 }
