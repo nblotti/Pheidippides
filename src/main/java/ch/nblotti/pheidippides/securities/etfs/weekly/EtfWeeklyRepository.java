@@ -5,5 +5,5 @@ import ch.nblotti.pheidippides.securities.etfs.EtfRepository;
 import javax.transaction.Transactional;
 
 @Transactional
-public interface EtfWeeklyRepository extends EtfRepository<EtfWeeklyTo> {
+public interface EtfWeeklyRepository extends EtfRepository<EtfWeeklyTO> {
 }

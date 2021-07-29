@@ -1,5 +1,8 @@
 package ch.nblotti.pheidippides.kafka.quote;
 
+import ch.nblotti.pheidippides.GeneratedExcludeJacocoTestCoverage;
+
+@GeneratedExcludeJacocoTestCoverage
 public enum SQL_OPERATION {
 
     EMPTY("e"),

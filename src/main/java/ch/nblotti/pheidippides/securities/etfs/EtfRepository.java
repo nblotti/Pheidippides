@@ -5,6 +5,6 @@ import org.springframework.stereotype.Repository;
 
 
 @Repository
-public abstract interface EtfRepository<T extends EtfTo> extends PagingAndSortingRepository<T, Long> {
+public abstract interface EtfRepository<T extends EtfTO> extends PagingAndSortingRepository<T, Long> {
 
 }
