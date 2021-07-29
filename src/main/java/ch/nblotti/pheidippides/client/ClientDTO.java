@@ -7,9 +7,10 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
-@GeneratedExcludeJacocoTestCoverage
+
 @AllArgsConstructor
 @NoArgsConstructor
+@GeneratedExcludeJacocoTestCoverage
 public class ClientDTO {
 
   @Getter
@@ -35,3 +36,6 @@ public class ClientDTO {
 
 
 }
+
+
+
