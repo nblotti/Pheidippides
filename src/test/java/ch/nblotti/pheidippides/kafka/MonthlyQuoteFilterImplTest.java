@@ -13,7 +13,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
 
-public class MonthlyQuoteFilterImplTest {
+class MonthlyQuoteFilterImplTest {
 
 
     @Mock

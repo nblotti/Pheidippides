@@ -33,13 +33,13 @@ public abstract  class StockFundamentalTO {
     public double bookValue;
 
     @Column(name = "ebitda")
-    public long eBITDA;
+    public long ebitda;
 
     @Column(name = "pe_ratio")
-    public double pERatio;
+    public double peratio;
 
     @Column(name = "trailing_pe")
-    public float TrailingPE;
+    public float trailingPE;
 
     @Column(name = "dividend_share")
     public double dividendShare;
@@ -66,7 +66,7 @@ public abstract  class StockFundamentalTO {
     public long revenueTTM;
 
     @Column(name = "price_sales_ttm")
-    public float PriceSalesTTM;
+    public float priceSalesTTM;
 
     @Column(name = "revenue_per_share_ttm")
     public double revenuePerShareTTM;
