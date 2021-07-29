@@ -107,14 +107,14 @@ class PheidippidesTopologyTest {
         TestOutputTopic<QuoteKeyWrapper, QuoteWrapper> outputTopic = testDriver.createOutputTopic(quoteTopicFiltredStr, quoteKeySerdes.deserializer(), quoteSerdes.deserializer());
 
         KeyValue<QuoteKeyWrapper, QuoteWrapper> firstResult = outputTopic.readKeyValue();
-        Assert.assertTrue(new String(firstResult.key.getIn()).equals("keyKey1"));
-        Assert.assertTrue(firstResult.value.getCode().equals("YAHOO"));
-        Assert.assertTrue(firstResult.value.getOperation().equals(SQL_OPERATION.CREATE));
+        Assert.assertEquals("keyKey1", new String(firstResult.key.getIn()));
+        Assert.assertEquals("YAHOO",firstResult.value.getCode());
+        Assert.assertEquals(SQL_OPERATION.CREATE,firstResult.value.getOperation());
 
         KeyValue<QuoteKeyWrapper, QuoteWrapper> secondResult = outputTopic.readKeyValue();
-        Assert.assertTrue(new String(secondResult.key.getIn()).equals("keyKey3"));
-        Assert.assertTrue(secondResult.value.getCode().equals("GOOGL"));
-        Assert.assertTrue(secondResult.value.getOperation().equals(SQL_OPERATION.CREATE));
+        Assert.assertEquals("keyKey3",new String(secondResult.key.getIn()));
+        Assert.assertEquals("GOOGL",secondResult.value.getCode());
+        Assert.assertEquals(SQL_OPERATION.CREATE,secondResult.value.getOperation());
 
 
         Exception exception = assertThrows(NoSuchElementException.class, () -> {

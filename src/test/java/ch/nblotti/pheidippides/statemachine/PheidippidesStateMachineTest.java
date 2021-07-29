@@ -13,6 +13,11 @@ import org.springframework.statemachine.test.StateMachineTestPlanBuilder;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
+
+import static org.awaitility.Awaitility.await;
+
 
 @SpringBootTest
 @ExtendWith(MockitoExtension.class)
@@ -21,42 +26,45 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 class PheidippidesStateMachineTest {
 
 
-  @Autowired
-  private StateMachineFactory<STATES, EVENTS> stateMachineFactory;
+    @Autowired
+    private StateMachineFactory<STATES, EVENTS> stateMachineFactory;
 
 
-  private StateMachine<STATES, EVENTS> stateMachine;
+    private StateMachine<STATES, EVENTS> stateMachine;
 
 
-  @BeforeEach
-  public void setup() throws Exception {
+    @BeforeEach
+    public void setup() throws Exception {
 
-    stateMachine = stateMachineFactory.getStateMachine();
+        stateMachine = stateMachineFactory.getStateMachine();
 
-    for (int i = 0; i < 10; i++) {
-      if (stateMachine.getState() != null) {
-        break;
-      } else {
-        Thread.sleep(200);
-      }
+        await().atMost(10, TimeUnit.SECONDS).until(didTheThing());  // Compliant
+
+
     }
 
-  }
+    private Callable<Boolean> didTheThing() {
+        return new Callable<Boolean>() {
+            public Boolean call() throws Exception {
+                return stateMachine.getState() != null;
+            }
+        };
+    }
 
-  @Test
-  public void testReady() throws Exception {
+    @Test
+    public void testReady() throws Exception {
 
-    StateMachineTestPlan<STATES, EVENTS> plan =
-      StateMachineTestPlanBuilder.<STATES, EVENTS>builder()
-        .stateMachine(stateMachine)
-        .step()
-        .expectState(STATES.READY)
-        .expectStateMachineStopped(0)
-        .and()
-        .build();
-    plan.test();
+        StateMachineTestPlan<STATES, EVENTS> plan =
+                StateMachineTestPlanBuilder.<STATES, EVENTS>builder()
+                        .stateMachine(stateMachine)
+                        .step()
+                        .expectState(STATES.READY)
+                        .expectStateMachineStopped(0)
+                        .and()
+                        .build();
+        plan.test();
 
-  }
+    }
 
 
 }

@@ -5,6 +5,8 @@ import ch.nblotti.pheidippides.kafka.quote.QuoteWrapper;
 import ch.nblotti.pheidippides.kafka.quote.SQL_OPERATION;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.nio.charset.StandardCharsets;
 
@@ -19,7 +21,6 @@ class QuoteDeserializerTest {
     void beforeEach() {
 
         quoteDeserializer = new QuoteDeserializer();
-        //   Mockito.lenient().when(settingRepository.getUserMinAge()).thenReturn(10);
     }
 
     @Test
@@ -31,41 +32,11 @@ class QuoteDeserializerTest {
 
     }
 
-    @Test
-    void deserializeNoPayload() {
+    @ParameterizedTest
+    @ValueSource(strings = {"{}", "{\"payload\":{}}", "{\"payload\":{\"op\":\"r\"}}", "{\"payload\":{\"op\":\"r\",\"after\":{\"exchange\":\"US\"}}}"})
+    void deserialize(String in) {
 
-        byte[] value = "{}".getBytes(StandardCharsets.UTF_8);
-        QuoteWrapper quote = quoteDeserializer.deserialize(null, value);
-
-        assertEquals(SQL_OPERATION.ERROR, quote.getOperation());
-
-    }
-
-    @Test
-    void deserializeNoOperation() {
-
-        byte[] value = "{\"payload\":{}}".getBytes(StandardCharsets.UTF_8);
-        QuoteWrapper quote = quoteDeserializer.deserialize(null, value);
-
-        assertEquals(SQL_OPERATION.ERROR, quote.getOperation());
-
-    }
-
-    @Test
-    void deserializeOperationNoAfterExchange() {
-
-        byte[] value = "{\"payload\":{\"op\":\"r\"}}".getBytes(StandardCharsets.UTF_8);
-        QuoteWrapper quote = quoteDeserializer.deserialize(null, value);
-
-        assertEquals(SQL_OPERATION.ERROR, quote.getOperation());
-
-    }
-
-
-    @Test
-    void deserializeOperationNoCode() {
-
-        byte[] value = "{\"payload\":{\"op\":\"r\",\"after\":{\"exchange\":\"US\"}}}".getBytes(StandardCharsets.UTF_8);
+        byte[] value = in.getBytes(StandardCharsets.UTF_8);
         QuoteWrapper quote = quoteDeserializer.deserialize(null, value);
 
         assertEquals(SQL_OPERATION.ERROR, quote.getOperation());

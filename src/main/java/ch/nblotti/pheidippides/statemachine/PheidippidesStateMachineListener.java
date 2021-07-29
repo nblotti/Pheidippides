@@ -78,7 +78,7 @@ public class PheidippidesStateMachineListener {
         clientService.unSubscribe(clientDTO);
 
 
-        log.info(String.format("Change detected in clients, closing connnection and restarting client election process"));
+        log.info("Change detected in clients, closing connnection and restarting client election process");
         stateMachine.sendEvent(EVENTS.EVENT_TREATED);
     }
 
@@ -117,7 +117,7 @@ public class PheidippidesStateMachineListener {
 
     @StatesOnEntry(target = STATES.ERROR)
     public void toError(StateMachine<STATES, EVENTS> stateMachine) {
-        log.info(String.format("Error, quitting"));
+        log.info("Error, quitting");
         stateMachine.stop();
 
     }

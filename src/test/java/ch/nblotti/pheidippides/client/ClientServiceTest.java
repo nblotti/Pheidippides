@@ -401,9 +401,9 @@ class ClientServiceTest {
 
     List<StrategiesDTO> returned = clientService.chooseStrategy(clientName);
 
-    assertEquals(returned.size(), 2);
-    assertTrue(firstStrategy.equals(returned.get(0).getStrategyName()));
-    assertTrue(secondStrategy.equals(returned.get(1).getStrategyName()));
+    assertEquals( 2,returned.size());
+    assertEquals(firstStrategy,returned.get(0).getStrategyName());
+    assertEquals(secondStrategy,returned.get(1).getStrategyName());
   }
 
 
@@ -437,7 +437,7 @@ class ClientServiceTest {
     List<StrategiesDTO> returned = clientService.chooseStrategy(clientName);
 
     assertEquals(1, returned.size());
-    assertTrue(firstStrategy.equals(returned.get(0).getStrategyName()));
+    assertEquals(firstStrategy,returned.get(0).getStrategyName());
 
   }
 
@@ -470,7 +470,7 @@ class ClientServiceTest {
     List<StrategiesDTO> returned = clientService.chooseStrategy(clientName);
 
     assertEquals(1, returned.size());
-    assertTrue(secondStrategy.equals(returned.get(0).getStrategyName()));
+    assertEquals(secondStrategy,returned.get(0).getStrategyName());
   }
 
 
@@ -505,7 +505,7 @@ class ClientServiceTest {
     List<StrategiesDTO> returned = clientService.chooseStrategy(clientName);
 
     assertEquals(1, returned.size());
-    assertTrue(firstStrategy.equals(returned.get(0).getStrategyName()));
+    assertEquals(firstStrategy,returned.get(0).getStrategyName());
   }
 
 
@@ -540,8 +540,8 @@ class ClientServiceTest {
     List<StrategiesDTO> returned = clientService.chooseStrategy(clientName);
 
     assertEquals(2, returned.size());
-    assertTrue(secondStrategy.equals(returned.get(0).getStrategyName()));
-    assertTrue(thirdStrategy.equals(returned.get(1).getStrategyName()));
+    assertEquals(secondStrategy,returned.get(0).getStrategyName());
+    assertEquals(thirdStrategy,returned.get(1).getStrategyName());
   }
 
   @Test
@@ -585,9 +585,9 @@ class ClientServiceTest {
     List<StrategiesDTO> returned = clientService.chooseStrategy(clientName);
 
     assertEquals(3, returned.size());
-    assertTrue(fifthtrategy.equals(returned.get(0).getStrategyName()));
-    assertTrue(sixthStrategy.equals(returned.get(1).getStrategyName()));
-    assertTrue(seventhStrategy.equals(returned.get(2).getStrategyName()));
+    assertEquals(fifthtrategy,returned.get(0).getStrategyName());
+    assertEquals(sixthStrategy,returned.get(1).getStrategyName());
+    assertEquals(seventhStrategy,returned.get(2).getStrategyName());
 
 
   }
@@ -632,8 +632,8 @@ class ClientServiceTest {
     List<StrategiesDTO> returned = clientService.chooseStrategy(clientName);
 
     assertEquals(2, returned.size());
-    assertTrue(thirdStrategy.equals(returned.get(0).getStrategyName()));
-    assertTrue(fourthtrategy.equals(returned.get(1).getStrategyName()));
+    assertEquals(thirdStrategy,returned.get(0).getStrategyName());
+    assertEquals(fourthtrategy,returned.get(1).getStrategyName());
   }
 
 
