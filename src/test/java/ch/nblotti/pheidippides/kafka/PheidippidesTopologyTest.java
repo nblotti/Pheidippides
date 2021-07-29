@@ -124,31 +124,6 @@ class PheidippidesTopologyTest {
     }
 
 
-    @Test
-    void thombstoneOrDeleteOperationPredicateTrue() {
-
-
-        Predicate<QuoteKeyWrapper, QuoteWrapper> operationPredicate = PheidippidesTopology.thombstoneOrDeleteOperationPredicate();
-
-        QuoteKeyWrapper quoteKeyWrapper = mock(QuoteKeyWrapper.class);
-        QuoteWrapper quoteWrapper = null;
-
-        Assert.assertTrue(operationPredicate.test(quoteKeyWrapper, quoteWrapper));
-
-    }
-
-    @Test
-    void thombstoneOrDeleteAllNull() {
-
-
-        Predicate<QuoteKeyWrapper, QuoteWrapper> operationPredicate = PheidippidesTopology.thombstoneOrDeleteOperationPredicate();
-
-        QuoteKeyWrapper quoteKeyWrapper = null;
-        QuoteWrapper quoteWrapper = null;
-
-        Assert.assertFalse(operationPredicate.test(quoteKeyWrapper, quoteWrapper));
-
-    }
 
     @Test
     void thombstoneOrDeleteKeyNull() {
@@ -157,9 +132,22 @@ class PheidippidesTopologyTest {
         Predicate<QuoteKeyWrapper, QuoteWrapper> operationPredicate = PheidippidesTopology.thombstoneOrDeleteOperationPredicate();
 
         QuoteKeyWrapper quoteKeyWrapper = null;
-        QuoteWrapper quoteWrapper  = mock(QuoteWrapper.class);
+        QuoteWrapper quoteWrapper  = null;
 
         Assert.assertFalse(operationPredicate.test(quoteKeyWrapper, quoteWrapper));
+
+    }
+
+    @Test
+    void thombstoneOrDeleteKeyNotNullOperationNull() {
+
+
+        Predicate<QuoteKeyWrapper, QuoteWrapper> operationPredicate = PheidippidesTopology.thombstoneOrDeleteOperationPredicate();
+
+        QuoteKeyWrapper quoteKeyWrapper = mock(QuoteKeyWrapper.class);
+        QuoteWrapper quoteWrapper = null;
+
+        Assert.assertTrue(operationPredicate.test(quoteKeyWrapper, quoteWrapper));
 
     }
 
@@ -199,6 +187,58 @@ class PheidippidesTopologyTest {
 
 
     @Test
-    void operationToFilterPredicate() {
+    void operationToFilterPredicateKeyNull() {
+
+        Predicate<QuoteKeyWrapper, QuoteWrapper> operationPredicate = PheidippidesTopology.operationToFilterPredicate();
+
+        QuoteKeyWrapper quoteKeyWrapper = null;
+        QuoteWrapper quoteWrapper  = mock(QuoteWrapper.class);
+
+        Assert.assertFalse(operationPredicate.test(quoteKeyWrapper, quoteWrapper));
+
     }
+
+    @Test
+    void operationToFilterPredicateKeyNotNullValueNull() {
+
+        Predicate<QuoteKeyWrapper, QuoteWrapper> operationPredicate = PheidippidesTopology.operationToFilterPredicate();
+
+        QuoteKeyWrapper quoteKeyWrapper = mock(QuoteKeyWrapper.class);
+        QuoteWrapper quoteWrapper  = null;
+
+        Assert.assertFalse(operationPredicate.test(quoteKeyWrapper, quoteWrapper));
+
+    }
+
+
+    @Test
+    void operationToFilterPredicateKeyNotNullValueNotNullOperationDelete() {
+
+        Predicate<QuoteKeyWrapper, QuoteWrapper> operationPredicate = PheidippidesTopology.operationToFilterPredicate();
+
+        QuoteKeyWrapper quoteKeyWrapper = mock(QuoteKeyWrapper.class);
+        QuoteWrapper quoteWrapper  =  mock(QuoteWrapper.class);
+
+        when(quoteWrapper.getOperation()).thenReturn(SQL_OPERATION.DELETE);
+
+        Assert.assertFalse(operationPredicate.test(quoteKeyWrapper, quoteWrapper));
+
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = SQL_OPERATION.class, names = {"CREATE", "ERROR","READ", "UPDATE","EMPTY"})
+    void operationToFilterPredicateKeyNotNullValueNotNullOtherOperation(SQL_OPERATION op) {
+
+        Predicate<QuoteKeyWrapper, QuoteWrapper> operationPredicate = PheidippidesTopology.operationToFilterPredicate();
+
+        QuoteKeyWrapper quoteKeyWrapper = mock(QuoteKeyWrapper.class);
+        QuoteWrapper quoteWrapper  =  mock(QuoteWrapper.class);
+
+        when(quoteWrapper.getOperation()).thenReturn(op);
+
+        Assert.assertTrue(operationPredicate.test(quoteKeyWrapper, quoteWrapper));
+
+    }
+
+
 }
