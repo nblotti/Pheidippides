@@ -6,9 +6,12 @@ import ch.nblotti.pheidippides.kafka.user.UserSubscription;
 import ch.nblotti.pheidippides.kafka.user.UserSubscriptionSerdes;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.*;
+import org.apache.kafka.streams.kstream.Predicate;
 import org.junit.Assert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -121,4 +124,81 @@ class PheidippidesTopologyTest {
     }
 
 
+    @Test
+    void thombstoneOrDeleteOperationPredicateTrue() {
+
+
+        Predicate<QuoteKeyWrapper, QuoteWrapper> operationPredicate = PheidippidesTopology.thombstoneOrDeleteOperationPredicate();
+
+        QuoteKeyWrapper quoteKeyWrapper = mock(QuoteKeyWrapper.class);
+        QuoteWrapper quoteWrapper = null;
+
+        Assert.assertTrue(operationPredicate.test(quoteKeyWrapper, quoteWrapper));
+
+    }
+
+    @Test
+    void thombstoneOrDeleteAllNull() {
+
+
+        Predicate<QuoteKeyWrapper, QuoteWrapper> operationPredicate = PheidippidesTopology.thombstoneOrDeleteOperationPredicate();
+
+        QuoteKeyWrapper quoteKeyWrapper = null;
+        QuoteWrapper quoteWrapper = null;
+
+        Assert.assertFalse(operationPredicate.test(quoteKeyWrapper, quoteWrapper));
+
+    }
+
+    @Test
+    void thombstoneOrDeleteKeyNull() {
+
+
+        Predicate<QuoteKeyWrapper, QuoteWrapper> operationPredicate = PheidippidesTopology.thombstoneOrDeleteOperationPredicate();
+
+        QuoteKeyWrapper quoteKeyWrapper = null;
+        QuoteWrapper quoteWrapper  = mock(QuoteWrapper.class);
+
+        Assert.assertFalse(operationPredicate.test(quoteKeyWrapper, quoteWrapper));
+
+    }
+
+
+    @ParameterizedTest
+    @EnumSource(value = SQL_OPERATION.class, names = {"DELETE", "EMPTY"})
+    void thombstoneOrDeleteOperationPredicateFalse(SQL_OPERATION op) {
+
+
+        Predicate<QuoteKeyWrapper, QuoteWrapper> operationPredicate = PheidippidesTopology.thombstoneOrDeleteOperationPredicate();
+
+        QuoteKeyWrapper quoteKeyWrapper = mock(QuoteKeyWrapper.class);
+        QuoteWrapper quoteWrapper  = mock(QuoteWrapper.class);
+
+        when(quoteWrapper.getOperation()).thenReturn(op);
+
+        Assert.assertTrue(operationPredicate.test(quoteKeyWrapper, quoteWrapper));
+
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = SQL_OPERATION.class, names = {"CREATE", "ERROR","READ", "UPDATE"})
+    void thombstoneOrDeleteOperationPredicateEnumTrue(SQL_OPERATION op) {
+
+
+        Predicate<QuoteKeyWrapper, QuoteWrapper> operationPredicate = PheidippidesTopology.thombstoneOrDeleteOperationPredicate();
+
+        QuoteKeyWrapper quoteKeyWrapper = mock(QuoteKeyWrapper.class);
+        QuoteWrapper quoteWrapper  = mock(QuoteWrapper.class);
+
+        when(quoteWrapper.getOperation()).thenReturn(op);
+
+        Assert.assertFalse(operationPredicate.test(quoteKeyWrapper, quoteWrapper));
+
+    }
+
+
+
+    @Test
+    void operationToFilterPredicate() {
+    }
 }

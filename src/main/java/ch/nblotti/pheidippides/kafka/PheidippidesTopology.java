@@ -41,13 +41,25 @@ public class PheidippidesTopology {
     }
 
 
-    private Predicate<QuoteKeyWrapper, QuoteWrapper> thombstoneOrDeleteOperationPredicate() {
-        return (key, value) ->
-                (key != null && value == null) || value.getOperation().equals(SQL_OPERATION.DELETE) || value.getOperation().equals(SQL_OPERATION.EMPTY);
+    static Predicate<QuoteKeyWrapper, QuoteWrapper> thombstoneOrDeleteOperationPredicate() {
+        return new Predicate<QuoteKeyWrapper, QuoteWrapper>() {
+            @Override
+            public boolean test(QuoteKeyWrapper key, QuoteWrapper value) {
+
+                if (key == null)
+                    return false;
+                else if (value == null)
+                    return true;
+                else if (value.getOperation().equals(SQL_OPERATION.DELETE) || value.getOperation().equals(SQL_OPERATION.EMPTY))
+                    return true;
+                else
+                    return false;
+            }
+        };
     }
 
 
-    private Predicate<QuoteKeyWrapper, QuoteWrapper> operationToFilterPredicate() {
+    static Predicate<QuoteKeyWrapper, QuoteWrapper> operationToFilterPredicate() {
         return (key, value) -> key != null && value != null && !value.getOperation().equals(SQL_OPERATION.DELETE);
     }
 
