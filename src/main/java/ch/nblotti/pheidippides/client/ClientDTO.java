@@ -10,29 +10,31 @@ import java.util.List;
 
 @AllArgsConstructor
 @NoArgsConstructor
-@GeneratedExcludeJacocoTestCoverage
+
 public class ClientDTO {
 
-  @Getter
-  private String userName;
+    @Getter
+    private String userName;
 
-  private ClientDBInfo clientDBInfo;
+    private ClientDBInfo clientDBInfo;
 
-  @Getter
-  private List<StrategiesDTO> strategies;
+    @Getter
+    private List<StrategiesDTO> strategies;
 
+    @GeneratedExcludeJacocoTestCoverage
+    public String getDbUrl() {
+        return clientDBInfo.getDbUrl();
+    }
 
-  public String getDbUrl() {
-    return clientDBInfo.getDbUrl();
-  }
+    @GeneratedExcludeJacocoTestCoverage
+    public String getDbUser() {
+        return clientDBInfo.getDbUser();
+    }
 
-  public String getDbUser() {
-    return clientDBInfo.getDbUser();
-  }
-
-  public String getDbPassword() {
-    return clientDBInfo.getDbPassword();
-  }
+    @GeneratedExcludeJacocoTestCoverage
+    public String getDbPassword() {
+        return clientDBInfo.getDbPassword();
+    }
 
 
 }
