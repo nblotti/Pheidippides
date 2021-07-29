@@ -1,5 +1,6 @@
 package ch.nblotti.pheidippides.kafka;
 
+import ch.nblotti.pheidippides.GeneratedExcludeJacocoTestCoverage;
 import ch.nblotti.pheidippides.statemachine.EVENTS;
 import ch.nblotti.pheidippides.statemachine.STATES;
 import org.modelmapper.ModelMapper;
@@ -10,6 +11,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.statemachine.StateMachine;
 import org.springframework.web.client.RestTemplate;
 
+@GeneratedExcludeJacocoTestCoverage
 @Configuration
 public class KafkaConfiguration {
 

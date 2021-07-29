@@ -1,11 +1,13 @@
 package ch.nblotti.pheidippides.client;
 
+import ch.nblotti.pheidippides.GeneratedExcludeJacocoTestCoverage;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
 
+@GeneratedExcludeJacocoTestCoverage
 @AllArgsConstructor
 @NoArgsConstructor
 public class ClientDTO {

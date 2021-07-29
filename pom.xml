@@ -258,10 +258,6 @@
                 <configuration>
                     <excludes>
                         <exclude>ch/nblotti/**/*TO.*</exclude>
-                        <exclude>ch/nblotti/**/*DTO.*</exclude>
-                        <exclude>ch/nblotti/**/*Configuration.*</exclude>
-                        <exclude>ch/nblotti/**/*PingController.*</exclude>
-
                     </excludes>
                 </configuration>
                 <executions>
