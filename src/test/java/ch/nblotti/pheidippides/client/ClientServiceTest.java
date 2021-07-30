@@ -8,8 +8,11 @@ import org.junit.Assert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.statemachine.StateMachine;
 
 import java.time.format.DateTimeFormatter;
@@ -19,8 +22,8 @@ import java.util.List;
 
 import static ch.nblotti.pheidippides.client.ClientService.*;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.doReturn;
 
 
 @ExtendWith(MockitoExtension.class)
@@ -69,6 +72,40 @@ class ClientServiceTest {
 
 
     }
+
+    @Test
+    void subscribeClientNull() {
+
+
+        List<StrategiesDTO> strategies = Mockito.mock(List.class);
+
+        doReturn(null).when(clientService).selectFreeClient();
+
+        clientService.subscribe();
+
+        verify(stateMachine, times(1)).sendEvent(EVENTS.WAIT_FOR_CLIENT);
+        verify(clientService, times(1)).selectFreeClient();
+        verify(clientService, times(0)).registerToClientChanges(anyString());
+        verify(clientService, times(0)).buildAndSendUpdatedMessage(anyString(), any());
+
+
+    }
+
+    @Test
+    void unSubscribe() {
+        String clientName = "test";
+        Client client = mock(Client.class);
+
+        when(client.getUserName()).thenReturn(clientName);
+
+        clientService.unSubscribe(client);
+
+        verify(zkClient, times(1)).unsubscribeAll();
+        verify(clientService, times(1)).removeFromClientLiveNodes(clientName);
+
+
+    }
+
 
     @Test
     void registerToClientChanges() {
@@ -125,6 +162,31 @@ class ClientServiceTest {
         String returned = clientService.selectFreeClient();
 
         Assert.assertNull(returned);
+
+    }
+
+    @Test
+    void selectFreeClientOneClientLiveNodesZero() {
+
+        String firstClient = "1";
+        String secondClient = "2";
+        List<String> clients = new ArrayList<>();
+        clients.add(firstClient);
+        clients.add(secondClient);
+
+        List<String> returnedFreeClient = mock(List.class);
+        when(returnedFreeClient.isEmpty()).thenReturn(true);
+        doReturn(clients).when(clientService).findAllClient();
+
+        doReturn(returnedFreeClient).when(clientService).getLiveNodes(secondClient);
+
+        doReturn(0).when(clientService).getNodeAllowed(firstClient);
+        doReturn(1).when(clientService).getNodeAllowed(secondClient);
+
+
+        String returned = clientService.selectFreeClient();
+
+        Assert.assertEquals(secondClient, returned);
 
     }
 
@@ -708,6 +770,57 @@ class ClientServiceTest {
         Assert.assertEquals(0, returned);
     }
 
+    @Test
+    void removeFromClientLiveNodes() {
+
+        String clientName = "test";
+        String uuid = "uuid";
+
+        doReturn(uuid).when(clientService).getUuid();
+
+        clientService.removeFromClientLiveNodes(clientName);
+
+        verify(clientService, times(1)).removeFromLiveNodes(String.format(CLIENT_LIVE_NODES + "/%s", clientName, uuid));
+    }
+
+    @Test
+    void buildAndSendDeletedMessageListContainClientName() {
+
+        String clientName = "test";
+        List<String> clientNameList = Arrays.asList(clientName);
+
+        clientService.buildAndSendDeletedMessage(clientNameList, clientName);
+
+        ArgumentCaptor<Message> messageArgumentCaptor = ArgumentCaptor.forClass(Message.class);
+
+        verify(stateMachine, times(1)).sendEvent(messageArgumentCaptor.capture());
+
+        Message mess = messageArgumentCaptor.getValue();
+
+        Assert.assertEquals(EVENTS.ZK_CLIENT_CHANGE_EVENT_RECEIVED, mess.getPayload());
+
+        Assert.assertEquals(false, mess.getHeaders().get(FOLLOWED_CLIENT));
+    }
+
+    @Test
+    void buildAndSendDeletedMessageListNotContainClientName() {
+
+        String clientName = "test";
+        List<String> clientNameList = Arrays.asList(clientName);
+
+        clientService.buildAndSendDeletedMessage(clientNameList, "DifferentClientName");
+
+
+        ArgumentCaptor<Message> messageArgumentCaptor = ArgumentCaptor.forClass(Message.class);
+
+        verify(stateMachine, times(1)).sendEvent(messageArgumentCaptor.capture());
+
+        Message mess = messageArgumentCaptor.getValue();
+
+        Assert.assertEquals(EVENTS.ZK_CLIENT_CHANGE_EVENT_RECEIVED, mess.getPayload());
+
+        Assert.assertEquals(true, mess.getHeaders().get(FOLLOWED_CLIENT));
+    }
+
+
 }
-
-

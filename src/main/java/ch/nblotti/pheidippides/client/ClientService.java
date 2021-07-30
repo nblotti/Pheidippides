@@ -77,7 +77,7 @@ public class ClientService {
 
     public void unSubscribe(Client client) {
         zkClient.unsubscribeAll();
-        removeFromClientLiveNodes(client.getUserName());
+        this.removeFromClientLiveNodes(client.getUserName());
 
     }
 
@@ -207,7 +207,7 @@ public class ClientService {
 
     }
 
-    private void buildAndSendDeletedMessage(List<String> list, String clientName) {
+     void buildAndSendDeletedMessage(List<String> list, String clientName) {
         boolean followedClientDeleted = false;
 
         if (!list.contains(clientName))
