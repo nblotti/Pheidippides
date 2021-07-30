@@ -3,9 +3,6 @@ package ch.nblotti.pheidippides.datasource;
 import ch.nblotti.pheidippides.GeneratedExcludeJacocoTestCoverage;
 import ch.nblotti.pheidippides.statemachine.EVENTS;
 import ch.nblotti.pheidippides.statemachine.STATES;
-import org.I0Itec.zkclient.ZkClient;
-import org.I0Itec.zkclient.exception.ZkMarshallingError;
-import org.I0Itec.zkclient.serialize.ZkSerializer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,7 +16,6 @@ import org.springframework.statemachine.StateMachine;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
-import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 
 @GeneratedExcludeJacocoTestCoverage

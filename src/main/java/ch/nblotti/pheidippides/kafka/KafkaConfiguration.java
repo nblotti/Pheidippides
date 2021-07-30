@@ -63,7 +63,7 @@ public class KafkaConfiguration {
     @Scope("singleton")
     KafkaStreamManager kafkaStreamManager(StateMachine<STATES, EVENTS> stateMachine, PheidippidesTopology pheidippidesTopology) {
 
-        return new KafkaStreamManager(stateMachine, pheidippidesTopology, kafkaConnectString, quoteTopicFiltred,userSubscriptionTopic, userSubscriptionTopicFiltred, apicurioRegistryUrl);
+        return new KafkaStreamManager(stateMachine, pheidippidesTopology, kafkaConnectString, quoteTopicFiltred, userSubscriptionTopic, userSubscriptionTopicFiltred, apicurioRegistryUrl);
     }
 
 
