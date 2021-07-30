@@ -874,6 +874,23 @@ class ClientServiceTest {
 
     }
 
+    @Test
+    void getZkChildListenerThrowException() throws Exception {
+
+        String clientName = "clientName";
+        List<String> clientNameList = Arrays.asList(clientName);
+
+
+        doThrow(IllegalStateException.class).when(clientService).buildAndSendDeletedMessage(anyList(),anyString());
+
+        IZkChildListener iZkChildListener = clientService.getZkChildListener(clientName);
+
+        iZkChildListener.handleChildChange(clientName,clientNameList);
+
+        verify(clientService, times(1)).logError(String.format(NODE_ILLEGAL_STATUS_DELETING, clientName));
+
+    }
+
 /*
     @Test
     void getStrategies(String clientName) {

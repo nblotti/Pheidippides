@@ -160,30 +160,39 @@ public class ClientService {
 
         zkClient.subscribeChildChanges(strategiesPath, getiZkChildListener(clientName));
 
-
     }
 
     @NotNull
     IZkChildListener getZkChildListener(String clientName) {
-        return (parentPath, list) -> buildAndSendDeletedMessage(list, clientName);
-    }
-
-    @NotNull
-    IZkChildListener getiZkChildListener(String clientName) {
-        return new IZkChildListener() {
-            @Override
-            public void handleChildChange(String parentPath, List<String> list) throws Exception {
-                try {
-                    buildAndSendUpdatedMessage(clientName, EVENTS.ZK_STRATEGIES_EVENT_RECEIVED);
-                } catch (IllegalStateException ex) {
-                    log.error(String.format(NODE_ILLEGAL_STATUS_DELETING, clientName));
-                }
+        return (parentPath, list) -> {
+            try {
+                buildAndSendDeletedMessage(list, clientName);
+            } catch (IllegalStateException ex) {
+                logError(String.format(NODE_ILLEGAL_STATUS_DELETING, clientName));
             }
         };
     }
 
+    void logError(String error) {
+        log.error(error);
+    }
+
+
     @NotNull
-     IZkDataListener getiZkDataListener(String clientName) {
+    IZkChildListener getiZkChildListener(String clientName) {
+        return (parentPath, list) -> {
+            try {
+                buildAndSendUpdatedMessage(clientName, EVENTS.ZK_STRATEGIES_EVENT_RECEIVED);
+            } catch (IllegalStateException ex) {
+                logError(String.format(NODE_ILLEGAL_STATUS_DELETING, clientName));
+            }
+
+        };
+    }
+
+
+    @NotNull
+    IZkDataListener getiZkDataListener(String clientName) {
         return new IZkDataListener() {
             @Override
             public void handleDataChange(String s, Object o) throws Exception {
@@ -195,7 +204,7 @@ public class ClientService {
                     stateMachine.sendEvent(message);
 
                 } catch (IllegalStateException ex) {
-                    log.error(String.format(NODE_ILLEGAL_STATUS_DELETING, clientName));
+                    logError(String.format(NODE_ILLEGAL_STATUS_DELETING, clientName));
                 }
             }
 
@@ -223,7 +232,6 @@ public class ClientService {
 
     void registerTODBInfoChangeEvent(String clientName) {
         String dbNodesPath = String.format(CLIENT_DB_URL, clientName);
-
 
         zkClient.subscribeDataChanges(dbNodesPath, getZkDataListener(clientName));
 
