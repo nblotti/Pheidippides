@@ -5,6 +5,8 @@ import ch.nblotti.pheidippides.statemachine.STATES;
 import org.I0Itec.zkclient.IZkChildListener;
 import org.I0Itec.zkclient.IZkDataListener;
 import org.I0Itec.zkclient.ZkClient;
+import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.ZooDefs;
 import org.junit.Assert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -942,7 +944,6 @@ class ClientServiceTest {
     }
 
 
-
     @Test
     void getiZkDataListener() throws Exception {
 
@@ -985,23 +986,87 @@ class ClientServiceTest {
 
     }
 
-
-
-/*
     @Test
-    void getStrategies(String clientName) {
-        return getAllChildren(String.format(CLIENT_STRATEGIES, clientName));
+    void registerTODBInfoChangeEvent() {
+
+        String clientName = "clientName";
+        String dbNodesPath = String.format(CLIENT_DB_URL, clientName);
+        ArgumentCaptor<String> dbNodesPathCaptor = ArgumentCaptor.forClass(String.class);
+
+        clientService.registerTODBInfoChangeEvent(clientName);
+
+        verify(zkClient, times(1)).subscribeDataChanges(dbNodesPathCaptor.capture(), any(IZkDataListener.class));
+
+        assertEquals(dbNodesPath, dbNodesPathCaptor.getValue());
+
+    }
+
+    @Test
+    void iZkDataListenerHandleDataChange() throws Exception {
+
+        String clientName = "clientName";
+        IZkDataListener iZkDataListener = clientService.getZkDataListener(clientName);
+
+        doNothing().when(clientService).buildAndSendUpdatedMessage(clientName, EVENTS.ZK_DB_EVENT_RECEIVED);
+
+        iZkDataListener.handleDataChange(clientName, null);
+
+        verify(clientService, times(1)).buildAndSendUpdatedMessage(clientName, EVENTS.ZK_DB_EVENT_RECEIVED);
+
+    }
+
+    @Test
+    void iZkDataListenerHandleDataDeleted() throws Exception {
+
+        String clientName = "clientName";
+
+        IZkDataListener iZkDataListener = clientService.getZkDataListener(clientName);
+
+        doNothing().when(clientService).buildAndSendUpdatedMessage(clientName, EVENTS.ZK_DB_EVENT_RECEIVED);
+
+        iZkDataListener.handleDataDeleted(clientName);
+
+        verify(clientService, times(1)).buildAndSendUpdatedMessage(clientName, EVENTS.ZK_DB_EVENT_RECEIVED);
+
+    }
+
+    @Test
+    void getStrategies() {
+        List<String> list = mock(List.class);
+        String clientName = "clientName";
+        String path = String.format(CLIENT_STRATEGIES, clientName);
+
+        ArgumentCaptor<String> clientNameCaptor = ArgumentCaptor.forClass(String.class);
+
+        doReturn(list).when(clientService).getAllChildren(clientNameCaptor.capture());
+
+        List<String> returned = clientService.getStrategies(clientName);
+
+        assertEquals(list, returned);
+        assertEquals(path, clientNameCaptor.getValue());
+
     }
 
     @Test
     void findAllClient() {
-        return getAllChildren(CLIENTS);
+        List<String> list = mock(List.class);
+        doReturn(list).when(clientService).getAllChildren(CLIENTS);
+
+        List<String> returned = clientService.findAllClient();
+        assertEquals(list, returned);
     }
 
     @Test
-    void addToLiveNodes(String nodeName) {
-        zkClient.create(nodeName, "", ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
+    void addToLiveNodes() {
+
+        String nodeName = "nodeName";
+        ArgumentCaptor<String> nodeNameCaptor = ArgumentCaptor.forClass(String.class);
+        clientService.addToLiveNodes(nodeName);
+
+        verify(zkClient,times(1)).create(nodeNameCaptor.capture(), anyString(), any(), any(CreateMode.class));
+
+        assertEquals(nodeName, nodeNameCaptor.getValue());
     }
-*/
+
 
 }

@@ -239,7 +239,7 @@ public class ClientService {
     }
 
     @NotNull
-    private IZkDataListener getZkDataListener(String clientName) {
+     IZkDataListener getZkDataListener(String clientName) {
         return new IZkDataListener() {
 
             @Override
