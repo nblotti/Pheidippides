@@ -899,10 +899,11 @@ class ClientServiceTest {
 
         IZkChildListener iZkChildListener = clientService.getZkChildUpdateListener(clientName);
 
+        doNothing().when(clientService).buildAndSendUpdatedMessage(clientName,EVENTS.ZK_STRATEGIES_EVENT_RECEIVED);
         iZkChildListener.handleChildChange(clientName, clientNameList);
 
         verify(clientService, times(1)).buildAndSendUpdatedMessage(clientName,EVENTS.ZK_STRATEGIES_EVENT_RECEIVED);
-        verify(clientService, times(1)).logError(String.format(NODE_ILLEGAL_STATUS_DELETING, clientName));
+        verify(clientService, times(0)).logError(String.format(NODE_ILLEGAL_STATUS_DELETING, clientName));
 
     }
 
