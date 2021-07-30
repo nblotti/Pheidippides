@@ -925,6 +925,49 @@ class ClientServiceTest {
     }
 
 
+    @Test
+    void getiZkDataListener() throws Exception {
+
+        String clientName = "clientName";
+
+        ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
+
+        IZkDataListener iZkDataListener = clientService.getiZkDataListener(clientName);
+
+
+        iZkDataListener.handleDataChange(clientName,clientName);
+
+        verify(stateMachine, times(1)).sendEvent(messageCaptor.capture());
+
+       Message<EVENTS> message =  messageCaptor.getValue();
+
+       assertEquals(EVENTS.ZK_CLIENT_CHANGE_EVENT_RECEIVED, message.getPayload());
+
+    }
+
+    @Test
+    void getiZkDataListenerThrowsException() throws Exception {
+
+        String clientName = "clientName";
+
+        ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
+
+        IZkDataListener iZkDataListener = clientService.getiZkDataListener(clientName);
+
+        doThrow(IllegalStateException.class).when(stateMachine).sendEvent(any(Message.class));
+
+        iZkDataListener.handleDataChange(clientName,clientName);
+
+        verify(stateMachine, times(1)).sendEvent(messageCaptor.capture());
+
+        Message<EVENTS> message =  messageCaptor.getValue();
+
+        assertEquals(EVENTS.ZK_CLIENT_CHANGE_EVENT_RECEIVED, message.getPayload());
+        verify(clientService, times(1)).logError(String.format(NODE_ILLEGAL_STATUS_DELETING, clientName));
+
+    }
+
+
 
 /*
     @Test
