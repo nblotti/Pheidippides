@@ -94,7 +94,7 @@ class KafkaConnectManagerTest {
     }
 
     @Test
-    public void deleteStockConnector() {
+    void deleteStockConnector() {
 
         Client client = Mockito.mock(Client.class);
         ResponseEntity<String> responseEntity = Mockito.mock(ResponseEntity.class);
@@ -112,7 +112,7 @@ class KafkaConnectManagerTest {
 
 
     @Test
-    public void deleteStockConnectorError() {
+    void deleteStockConnectorError() {
 
         RestTemplate restTemplate = Mockito.mock(RestTemplate.class);
 
@@ -126,7 +126,6 @@ class KafkaConnectManagerTest {
 
 
         assertFalse(kafkaConnectManager.deleteStockConnector(client));
-
 
 
     }

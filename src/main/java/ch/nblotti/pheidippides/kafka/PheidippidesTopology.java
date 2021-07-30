@@ -42,9 +42,8 @@ public class PheidippidesTopology {
 
 
     static Predicate<QuoteKeyWrapper, QuoteWrapper> thombstoneOrDeleteOperationPredicate() {
-        return (key, value) -> {
-            return key != null && (value == null || value.getOperation().equals(SQL_OPERATION.DELETE) || value.getOperation().equals(SQL_OPERATION.EMPTY));
-        };
+        return (key, value) -> key != null && (value == null || value.getOperation().equals(SQL_OPERATION.DELETE) || value.getOperation().equals(SQL_OPERATION.EMPTY));
+
 
     }
 

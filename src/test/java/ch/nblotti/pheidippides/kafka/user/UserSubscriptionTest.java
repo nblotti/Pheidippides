@@ -41,7 +41,7 @@ class UserSubscriptionTest {
         UserSubscription userSubscription = new UserSubscription();
 
         userSubscription.setStocks(null);
-        Assert.assertEquals(userSubscription.getStocks(), Collections.emptyList());
+        Assert.assertEquals(Collections.emptyList(),userSubscription.getStocks());
     }
 
     @Test
@@ -50,6 +50,6 @@ class UserSubscriptionTest {
         UserSubscription userSubscription = new UserSubscription();
 
         userSubscription.setEtfs(null);
-        Assert.assertEquals(userSubscription.getEtfs(), Collections.emptyList());
+        Assert.assertEquals(Collections.emptyList(),userSubscription.getEtfs());
     }
 }
