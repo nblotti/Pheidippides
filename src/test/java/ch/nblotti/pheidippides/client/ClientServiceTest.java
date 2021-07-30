@@ -3,6 +3,7 @@ package ch.nblotti.pheidippides.client;
 import ch.nblotti.pheidippides.statemachine.EVENTS;
 import ch.nblotti.pheidippides.statemachine.STATES;
 import org.I0Itec.zkclient.IZkChildListener;
+import org.I0Itec.zkclient.IZkDataListener;
 import org.I0Itec.zkclient.ZkClient;
 import org.junit.Assert;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,10 +13,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.statemachine.StateMachine;
 
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -834,6 +833,47 @@ class ClientServiceTest {
 
         assertEquals(3, clientService.getStrategiesCount(clientName));
     }
+
+    @Test
+    void registerToStrategyChanges() {
+
+        String clientName = "clientName";
+
+        ArgumentCaptor<String> pathCaptor = ArgumentCaptor.forClass(String.class);
+
+        String liveNodesPath = String.format(CLIENT_LIVE_NODES, clientName);
+        String strategiesPath = String.format(CLIENT_STRATEGIES, clientName);
+        String nodeAllowedPath = String.format(CLIENT_NODE_ALLOWED, clientName);
+
+        clientService.registerToStrategyChanges(clientName);
+
+        verify(zkClient, times(3)).subscribeChildChanges(pathCaptor.capture(), any(IZkChildListener.class));
+
+        List<String> calls = pathCaptor.getAllValues();
+        assertEquals(CLIENTS, calls.get(0));
+        assertEquals(liveNodesPath, calls.get(1));
+        assertEquals(strategiesPath, calls.get(2));
+
+        ArgumentCaptor<String> pathdataCaptor = ArgumentCaptor.forClass(String.class);
+        verify(zkClient, times(1)).subscribeDataChanges(pathdataCaptor.capture(), any(IZkDataListener.class));
+        calls = pathdataCaptor.getAllValues();
+        assertEquals(nodeAllowedPath, calls.get(0));
+    }
+
+    @Test
+    void getZkChildListener() throws Exception {
+
+        String clientName = "clientName";
+        List<String> clientNameList = Arrays.asList(clientName);
+
+        IZkChildListener iZkChildListener = clientService.getZkChildListener(clientName);
+
+        iZkChildListener.handleChildChange(clientName, clientNameList);
+
+        verify(clientService, times(1)).buildAndSendDeletedMessage(clientNameList, clientName);
+
+    }
+
 /*
     @Test
     void getStrategies(String clientName) {

@@ -164,12 +164,12 @@ public class ClientService {
     }
 
     @NotNull
-    private IZkChildListener getZkChildListener(String clientName) {
+    IZkChildListener getZkChildListener(String clientName) {
         return (parentPath, list) -> buildAndSendDeletedMessage(list, clientName);
     }
 
     @NotNull
-    private IZkChildListener getiZkChildListener(String clientName) {
+    IZkChildListener getiZkChildListener(String clientName) {
         return new IZkChildListener() {
             @Override
             public void handleChildChange(String parentPath, List<String> list) throws Exception {
@@ -183,7 +183,7 @@ public class ClientService {
     }
 
     @NotNull
-    private IZkDataListener getiZkDataListener(String clientName) {
+     IZkDataListener getiZkDataListener(String clientName) {
         return new IZkDataListener() {
             @Override
             public void handleDataChange(String s, Object o) throws Exception {
