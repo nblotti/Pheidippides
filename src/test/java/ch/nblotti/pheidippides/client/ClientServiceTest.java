@@ -902,6 +902,7 @@ class ClientServiceTest {
         iZkChildListener.handleChildChange(clientName, clientNameList);
 
         verify(clientService, times(1)).buildAndSendUpdatedMessage(clientName,EVENTS.ZK_STRATEGIES_EVENT_RECEIVED);
+        verify(clientService, times(1)).logError(String.format(NODE_ILLEGAL_STATUS_DELETING, clientName));
 
     }
 
@@ -918,6 +919,7 @@ class ClientServiceTest {
 
         iZkChildListener.handleChildChange(clientName,clientNameList);
 
+        verify(clientService, times(1)).buildAndSendUpdatedMessage(clientName,EVENTS.ZK_STRATEGIES_EVENT_RECEIVED);
         verify(clientService, times(1)).logError(String.format(NODE_ILLEGAL_STATUS_DELETING, clientName));
 
     }
