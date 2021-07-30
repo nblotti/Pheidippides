@@ -6,6 +6,7 @@ import org.I0Itec.zkclient.IZkChildListener;
 import org.I0Itec.zkclient.IZkDataListener;
 import org.I0Itec.zkclient.ZkClient;
 import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -881,11 +882,11 @@ class ClientServiceTest {
         List<String> clientNameList = Arrays.asList(clientName);
 
 
-        doThrow(IllegalStateException.class).when(clientService).buildAndSendDeletedMessage(anyList(),anyString());
+        doThrow(IllegalStateException.class).when(clientService).buildAndSendDeletedMessage(anyList(), anyString());
 
         IZkChildListener iZkChildListener = clientService.getZkChildDeleteListener(clientName);
 
-        iZkChildListener.handleChildChange(clientName,clientNameList);
+        iZkChildListener.handleChildChange(clientName, clientNameList);
 
         verify(clientService, times(1)).logError(String.format(NODE_ILLEGAL_STATUS_DELETING, clientName));
 
@@ -899,10 +900,10 @@ class ClientServiceTest {
 
         IZkChildListener iZkChildListener = clientService.getZkChildUpdateListener(clientName);
 
-        doNothing().when(clientService).buildAndSendUpdatedMessage(clientName,EVENTS.ZK_STRATEGIES_EVENT_RECEIVED);
+        doNothing().when(clientService).buildAndSendUpdatedMessage(clientName, EVENTS.ZK_STRATEGIES_EVENT_RECEIVED);
         iZkChildListener.handleChildChange(clientName, clientNameList);
 
-        verify(clientService, times(1)).buildAndSendUpdatedMessage(clientName,EVENTS.ZK_STRATEGIES_EVENT_RECEIVED);
+        verify(clientService, times(1)).buildAndSendUpdatedMessage(clientName, EVENTS.ZK_STRATEGIES_EVENT_RECEIVED);
         verify(clientService, times(0)).logError(String.format(NODE_ILLEGAL_STATUS_DELETING, clientName));
 
     }
@@ -914,16 +915,32 @@ class ClientServiceTest {
         List<String> clientNameList = Arrays.asList(clientName);
 
 
-        doThrow(IllegalStateException.class).when(clientService).buildAndSendUpdatedMessage(anyString(),any(EVENTS.class));
+        doThrow(IllegalStateException.class).when(clientService).buildAndSendUpdatedMessage(anyString(), any(EVENTS.class));
 
         IZkChildListener iZkChildListener = clientService.getZkChildUpdateListener(clientName);
 
-        iZkChildListener.handleChildChange(clientName,clientNameList);
+        iZkChildListener.handleChildChange(clientName, clientNameList);
 
-        verify(clientService, times(1)).buildAndSendUpdatedMessage(clientName,EVENTS.ZK_STRATEGIES_EVENT_RECEIVED);
+        verify(clientService, times(1)).buildAndSendUpdatedMessage(clientName, EVENTS.ZK_STRATEGIES_EVENT_RECEIVED);
         verify(clientService, times(1)).logError(String.format(NODE_ILLEGAL_STATUS_DELETING, clientName));
 
     }
+
+
+    @Test
+    void getZkChildUpdateListenerHandleDataDeleted() {
+
+        String clientName = "clientName";
+
+        IZkDataListener iZkChildListener = clientService.getiZkDataListener(clientName);
+
+        Assertions.assertThrows(UnsupportedOperationException.class, () -> {
+
+            iZkChildListener.handleDataDeleted(clientName);
+        });
+
+    }
+
 
 
     @Test
@@ -936,13 +953,13 @@ class ClientServiceTest {
         IZkDataListener iZkDataListener = clientService.getiZkDataListener(clientName);
 
 
-        iZkDataListener.handleDataChange(clientName,clientName);
+        iZkDataListener.handleDataChange(clientName, clientName);
 
         verify(stateMachine, times(1)).sendEvent(messageCaptor.capture());
 
-       Message<EVENTS> message =  messageCaptor.getValue();
+        Message<EVENTS> message = messageCaptor.getValue();
 
-       assertEquals(EVENTS.ZK_CLIENT_CHANGE_EVENT_RECEIVED, message.getPayload());
+        assertEquals(EVENTS.ZK_CLIENT_CHANGE_EVENT_RECEIVED, message.getPayload());
 
     }
 
@@ -957,11 +974,11 @@ class ClientServiceTest {
 
         doThrow(IllegalStateException.class).when(stateMachine).sendEvent(any(Message.class));
 
-        iZkDataListener.handleDataChange(clientName,clientName);
+        iZkDataListener.handleDataChange(clientName, clientName);
 
         verify(stateMachine, times(1)).sendEvent(messageCaptor.capture());
 
-        Message<EVENTS> message =  messageCaptor.getValue();
+        Message<EVENTS> message = messageCaptor.getValue();
 
         assertEquals(EVENTS.ZK_CLIENT_CHANGE_EVENT_RECEIVED, message.getPayload());
         verify(clientService, times(1)).logError(String.format(NODE_ILLEGAL_STATUS_DELETING, clientName));
