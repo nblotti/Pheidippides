@@ -152,18 +152,18 @@ public class ClientService {
         String nodeAllowedPath = String.format(CLIENT_NODE_ALLOWED, clientName);
 
 
-        zkClient.subscribeChildChanges(CLIENTS, getZkChildListener(clientName));
+        zkClient.subscribeChildChanges(CLIENTS, getZkChildDeleteListener(clientName));
 
         zkClient.subscribeDataChanges(nodeAllowedPath, getiZkDataListener(clientName));
 
-        zkClient.subscribeChildChanges(liveNodesPath, getiZkChildListener(clientName));
+        zkClient.subscribeChildChanges(liveNodesPath, getZkChildUpdateListener(clientName));
 
-        zkClient.subscribeChildChanges(strategiesPath, getiZkChildListener(clientName));
+        zkClient.subscribeChildChanges(strategiesPath, getZkChildUpdateListener(clientName));
 
     }
 
     @NotNull
-    IZkChildListener getZkChildListener(String clientName) {
+    IZkChildListener getZkChildDeleteListener(String clientName) {
         return (parentPath, list) -> {
             try {
                 buildAndSendDeletedMessage(list, clientName);
@@ -179,7 +179,7 @@ public class ClientService {
 
 
     @NotNull
-    IZkChildListener getiZkChildListener(String clientName) {
+    IZkChildListener getZkChildUpdateListener(String clientName) {
         return (parentPath, list) -> {
             try {
                 buildAndSendUpdatedMessage(clientName, EVENTS.ZK_STRATEGIES_EVENT_RECEIVED);

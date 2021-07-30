@@ -861,12 +861,12 @@ class ClientServiceTest {
     }
 
     @Test
-    void getZkChildListener() throws Exception {
+    void getZkChildDeleteListener() throws Exception {
 
         String clientName = "clientName";
         List<String> clientNameList = Arrays.asList(clientName);
 
-        IZkChildListener iZkChildListener = clientService.getZkChildListener(clientName);
+        IZkChildListener iZkChildListener = clientService.getZkChildDeleteListener(clientName);
 
         iZkChildListener.handleChildChange(clientName, clientNameList);
 
@@ -875,7 +875,7 @@ class ClientServiceTest {
     }
 
     @Test
-    void getZkChildListenerThrowException() throws Exception {
+    void getZkChildDeleteListenerThrowException() throws Exception {
 
         String clientName = "clientName";
         List<String> clientNameList = Arrays.asList(clientName);
@@ -883,13 +883,46 @@ class ClientServiceTest {
 
         doThrow(IllegalStateException.class).when(clientService).buildAndSendDeletedMessage(anyList(),anyString());
 
-        IZkChildListener iZkChildListener = clientService.getZkChildListener(clientName);
+        IZkChildListener iZkChildListener = clientService.getZkChildDeleteListener(clientName);
 
         iZkChildListener.handleChildChange(clientName,clientNameList);
 
         verify(clientService, times(1)).logError(String.format(NODE_ILLEGAL_STATUS_DELETING, clientName));
 
     }
+
+    @Test
+    void getZkChildUpdateListener() throws Exception {
+
+        String clientName = "clientName";
+        List<String> clientNameList = Arrays.asList(clientName);
+
+        IZkChildListener iZkChildListener = clientService.getZkChildUpdateListener(clientName);
+
+        iZkChildListener.handleChildChange(clientName, clientNameList);
+
+        verify(clientService, times(1)).buildAndSendUpdatedMessage(clientName,EVENTS.ZK_STRATEGIES_EVENT_RECEIVED);
+
+    }
+
+    @Test
+    void getZkChildUpdateListenerThrowException() throws Exception {
+
+        String clientName = "clientName";
+        List<String> clientNameList = Arrays.asList(clientName);
+
+
+        doThrow(IllegalStateException.class).when(clientService).buildAndSendUpdatedMessage(anyString(),any(EVENTS.class));
+
+        IZkChildListener iZkChildListener = clientService.getZkChildUpdateListener(clientName);
+
+        iZkChildListener.handleChildChange(clientName,clientNameList);
+
+        verify(clientService, times(1)).logError(String.format(NODE_ILLEGAL_STATUS_DELETING, clientName));
+
+    }
+
+
 
 /*
     @Test
