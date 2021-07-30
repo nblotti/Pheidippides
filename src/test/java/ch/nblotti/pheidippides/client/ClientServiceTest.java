@@ -823,4 +823,32 @@ class ClientServiceTest {
     }
 
 
+    @Test
+    void getStrategiesCount() {
+
+        String clientName = "clientName";
+        List<String> strategies = mock(List.class);
+
+        doReturn(strategies).when(clientService).getStrategies(clientName);
+        when(strategies.size()).thenReturn(3);
+
+        assertEquals(3, clientService.getStrategiesCount(clientName));
+    }
+/*
+    @Test
+    void getStrategies(String clientName) {
+        return getAllChildren(String.format(CLIENT_STRATEGIES, clientName));
+    }
+
+    @Test
+    void findAllClient() {
+        return getAllChildren(CLIENTS);
+    }
+
+    @Test
+    void addToLiveNodes(String nodeName) {
+        zkClient.create(nodeName, "", ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
+    }
+*/
+
 }

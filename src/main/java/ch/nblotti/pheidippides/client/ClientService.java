@@ -8,6 +8,7 @@ import org.I0Itec.zkclient.IZkDataListener;
 import org.I0Itec.zkclient.ZkClient;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
@@ -151,16 +152,39 @@ public class ClientService {
         String nodeAllowedPath = String.format(CLIENT_NODE_ALLOWED, clientName);
 
 
-        zkClient.subscribeChildChanges(CLIENTS, new IZkChildListener() {
+        zkClient.subscribeChildChanges(CLIENTS, getZkChildListener(clientName));
+
+        zkClient.subscribeDataChanges(nodeAllowedPath, getiZkDataListener(clientName));
+
+        zkClient.subscribeChildChanges(liveNodesPath, getiZkChildListener(clientName));
+
+        zkClient.subscribeChildChanges(strategiesPath, getiZkChildListener(clientName));
+
+
+    }
+
+    @NotNull
+    private IZkChildListener getZkChildListener(String clientName) {
+        return (parentPath, list) -> buildAndSendDeletedMessage(list, clientName);
+    }
+
+    @NotNull
+    private IZkChildListener getiZkChildListener(String clientName) {
+        return new IZkChildListener() {
             @Override
             public void handleChildChange(String parentPath, List<String> list) throws Exception {
-
-                buildAndSendDeletedMessage(list, clientName);
-
+                try {
+                    buildAndSendUpdatedMessage(clientName, EVENTS.ZK_STRATEGIES_EVENT_RECEIVED);
+                } catch (IllegalStateException ex) {
+                    log.error(String.format(NODE_ILLEGAL_STATUS_DELETING, clientName));
+                }
             }
-        });
+        };
+    }
 
-        zkClient.subscribeDataChanges(nodeAllowedPath, new IZkDataListener() {
+    @NotNull
+    private IZkDataListener getiZkDataListener(String clientName) {
+        return new IZkDataListener() {
             @Override
             public void handleDataChange(String s, Object o) throws Exception {
                 try {
@@ -180,34 +204,10 @@ public class ClientService {
                 throw new UnsupportedOperationException();
             }
 
-        });
-
-        zkClient.subscribeChildChanges(liveNodesPath, new IZkChildListener() {
-            @Override
-            public void handleChildChange(String parentPath, List<String> list) throws Exception {
-                try {
-                    buildAndSendUpdatedMessage(clientName, EVENTS.ZK_STRATEGIES_EVENT_RECEIVED);
-                } catch (IllegalStateException ex) {
-                    log.error(String.format(NODE_ILLEGAL_STATUS_DELETING, clientName));
-                }
-            }
-        });
-        zkClient.subscribeChildChanges(strategiesPath, new IZkChildListener() {
-            @Override
-            public void handleChildChange(String parentPath, List<String> list) throws Exception {
-                try {
-                    buildAndSendUpdatedMessage(clientName, EVENTS.ZK_STRATEGIES_EVENT_RECEIVED);
-                } catch (IllegalStateException ex) {
-                    log.error(String.format(NODE_ILLEGAL_STATUS_DELETING, clientName));
-                }
-
-            }
-        });
-
-
+        };
     }
 
-     void buildAndSendDeletedMessage(List<String> list, String clientName) {
+    void buildAndSendDeletedMessage(List<String> list, String clientName) {
         boolean followedClientDeleted = false;
 
         if (!list.contains(clientName))
@@ -225,7 +225,14 @@ public class ClientService {
         String dbNodesPath = String.format(CLIENT_DB_URL, clientName);
 
 
-        zkClient.subscribeDataChanges(dbNodesPath, new IZkDataListener() {
+        zkClient.subscribeDataChanges(dbNodesPath, getZkDataListener(clientName));
+
+
+    }
+
+    @NotNull
+    private IZkDataListener getZkDataListener(String clientName) {
+        return new IZkDataListener() {
 
             @Override
             public void handleDataChange(String s, Object o) throws Exception {
@@ -237,9 +244,7 @@ public class ClientService {
                 buildAndSendUpdatedMessage(clientName, EVENTS.ZK_DB_EVENT_RECEIVED);
             }
 
-        });
-
-
+        };
     }
 
     public ClientDBInfo readDBInfo(String clientName) {
