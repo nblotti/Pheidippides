@@ -258,6 +258,7 @@
                 <configuration>
                     <excludes>
                         <exclude>ch/nblotti/**/*TO.*</exclude>
+                        <exclude>ch/nblotti/**/*TO.*</exclude>
                     </excludes>
                 </configuration>
                 <executions>
