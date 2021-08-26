@@ -5,6 +5,7 @@ import ch.nblotti.pheidippides.statemachine.EVENTS;
 import ch.nblotti.pheidippides.statemachine.STATES;
 import lombok.extern.slf4j.Slf4j;
 import org.flywaydb.core.Flyway;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.jdbc.datasource.lookup.AbstractRoutingDataSource;
 import org.springframework.messaging.Message;
@@ -36,9 +37,9 @@ public class RoutingDataSource extends AbstractRoutingDataSource {
     protected Object determineCurrentLookupKey() {
 
 
-        if (dataSources.containsKey(DataSourceEnum.CUSTOM))
+        if (getDataSources().containsKey(DataSourceEnum.CUSTOM))
             return DataSourceEnum.CUSTOM;
-        else if (dataSources.containsKey(DataSourceEnum.HSQL))
+        else if (getDataSources().containsKey(DataSourceEnum.HSQL))
             return DataSourceEnum.HSQL;
 
         throw new IllegalStateException("No dataSource defined");
@@ -48,32 +49,24 @@ public class RoutingDataSource extends AbstractRoutingDataSource {
     protected DataSource determineTargetDataSource() {
         DataSourceEnum lookupKey = (DataSourceEnum) determineCurrentLookupKey();
 
-        return dataSources.get(lookupKey);
+        return getDataSources().get(lookupKey);
     }
 
     public void createDataSource(Client client) {
         Message<EVENTS> message;
 
         try {
-            if (dataSources.containsKey(DataSourceEnum.CUSTOM)) {
-                closeConnection(dataSources.get(DataSourceEnum.CUSTOM));
+            if (getDataSources().containsKey(DataSourceEnum.CUSTOM)) {
+                closeConnection(getDataSources().get(DataSourceEnum.CUSTOM));
                 dataSources.remove(DataSourceEnum.CUSTOM);
             }
-            if (dataSources.containsKey(DataSourceEnum.HSQL)) {
-                closeConnection(dataSources.get(DataSourceEnum.HSQL));
+            if (getDataSources().containsKey(DataSourceEnum.HSQL)) {
+                closeConnection(getDataSources().get(DataSourceEnum.HSQL));
                 dataSources.remove(DataSourceEnum.HSQL);
             }
-            DriverManagerDataSource dataSource = new DriverManagerDataSource();
-            dataSource.setUrl(client.getDbUrl());
-            dataSource.setUsername(client.getDbUser());
-            dataSource.setPassword(client.getDbPassword());
+            DriverManagerDataSource dataSource = doCreateDataSourceFromClient(client);
 
-            Flyway flyway = Flyway.configure()
-                    .dataSource(client.getDbUrl(), client.getDbUser(), client.getDbPassword())
-                    .locations(DB_MIGRATION_LOCATION)
-                    .load();
-            flyway.migrate();
-            dataSources.put(DataSourceEnum.CUSTOM, dataSource);
+            doMigration(client, dataSource);
 
 
             message = MessageBuilder
@@ -90,26 +83,67 @@ public class RoutingDataSource extends AbstractRoutingDataSource {
 
     }
 
+    @NotNull
+    EnumMap<DataSourceEnum, DataSource> getDataSources() {
+        return dataSources;
+    }
+
+    boolean doMigration(Client client, DriverManagerDataSource dataSource) {
+        try {
+            Flyway flyway = Flyway.configure()
+                    .dataSource(client.getDbUrl(), client.getDbUser(), client.getDbPassword())
+                    .locations(DB_MIGRATION_LOCATION)
+                    .load();
+            flyway.migrate();
+            getDataSources().put(DataSourceEnum.CUSTOM, dataSource);
+        } catch (Exception ex) {
+            log.error(ex.getMessage());
+            return false;
+        }
+        return true;
+    }
+
+    @NotNull
+    DriverManagerDataSource doCreateDataSourceFromClient(Client client) {
+        DriverManagerDataSource dataSource = new DriverManagerDataSource();
+
+        if (client.getDbUrl() == null || client.getDbUrl().isEmpty())
+            throw new IllegalStateException("Db url can't be null");
+
+        if (client.getDbUser() == null || client.getDbUser().isEmpty())
+            throw new IllegalStateException("UserName can't be null");
+
+        if (client.getDbPassword() == null || client.getDbPassword().isEmpty())
+            throw new IllegalStateException("Password can't be null");
+
+        dataSource.setUrl(client.getDbUrl());
+        dataSource.setUsername(client.getDbUser());
+        dataSource.setPassword(client.getDbPassword());
+        return dataSource;
+    }
+
     public void closeAllConnection() {
 
-        for (Map.Entry<DataSourceEnum, DataSource> entry : dataSources.entrySet()) {
+        for (Map.Entry<DataSourceEnum, DataSource> entry : getDataSources().entrySet()) {
             DataSourceEnum key = entry.getKey();
 
             if (!key.equals(DataSourceEnum.HSQL)) {
-                DataSource current = this.dataSources.get(key);
-                this.dataSources.remove(key);
+                DataSource current = this.getDataSources().get(key);
+                this.getDataSources().remove(key);
                 closeConnection(current);
             }
 
         }
     }
 
-    private void closeConnection(DataSource ds) {
+    boolean closeConnection(DataSource ds) {
 
         try {
             ds.getConnection().close();
+            return true;
         } catch (SQLException throwables) {
             log.error(throwables.getMessage());
+            return false;
         }
 
     }
