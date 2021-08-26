@@ -187,7 +187,7 @@ class RoutingDataSourceTest {
     }
 
     @Test
-    public void oCreateDataSourceFromClientNullOrEmptyDbUrl() {
+    void oCreateDataSourceFromClientNullOrEmptyDbUrl() {
 
         Client client = mock(Client.class);
 
@@ -205,7 +205,7 @@ class RoutingDataSourceTest {
     }
 
     @Test
-    public void oCreateDataSourceFromClientNullOrEmptyDbUserName() {
+    void oCreateDataSourceFromClientNullOrEmptyDbUserName() {
 
         Client client = mock(Client.class);
 
@@ -226,7 +226,7 @@ class RoutingDataSourceTest {
 
 
     @Test
-    public void oCreateDataSourceFromClientNullOrEmptyPassword() {
+    void oCreateDataSourceFromClientNullOrEmptyPassword() {
 
         Client client = mock(Client.class);
 
@@ -250,7 +250,7 @@ class RoutingDataSourceTest {
 
 
     @Test
-    public void oCreateDataSourceFromClientEmtpyUrl() {
+    void oCreateDataSourceFromClientEmtpyUrl() {
 
         Client client = mock(Client.class);
 
@@ -268,7 +268,7 @@ class RoutingDataSourceTest {
 
 
     @Test
-    public void closeAllConnectionNoCustom() {
+    void closeAllConnectionNoCustom() {
 
         DataSource custom = mock(DataSource.class);
         EnumMap<DataSourceEnum, DataSource> dataSources = mock(EnumMap.class);
@@ -295,7 +295,7 @@ class RoutingDataSourceTest {
     }
 
     @Test
-    public void closeAllConnectionCustom() {
+    void closeAllConnectionCustom() {
 
         DataSource custom = mock(DataSource.class);
         EnumMap<DataSourceEnum, DataSource> dataSources = mock(EnumMap.class);
@@ -394,7 +394,7 @@ class RoutingDataSourceTest {
 
         DataSource returned = routingDataSource.determineTargetDataSource();
 
-        assertEquals(returned,ds);
+        assertEquals(returned, ds);
     }
 
 

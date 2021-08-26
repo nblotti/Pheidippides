@@ -60,7 +60,7 @@ class PheidippidesStateMachineListenerTest {
         pheidippidesStateMachineListener.waitForClient(stateMachine);
         verify(stateMachine, times(1)).sendEvent(events.capture());
 
-        assertEquals(events.getValue(), EVENTS.SUCCESS);
+        assertEquals(EVENTS.SUCCESS, events.getValue());
     }
 
 
@@ -163,7 +163,7 @@ class PheidippidesStateMachineListenerTest {
     }
 
     @Test
-    public void treatingZKStrategiesEvent() {
+    void treatingZKStrategiesEvent() {
 
         StateMachine<STATES, EVENTS> stateMachine = mock(StateMachine.class);
         ExtendedState extendedState = mock(ExtendedState.class);
