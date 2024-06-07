@@ -92,14 +92,14 @@ class PheidippidesTopologyTest {
         String thirdQuoteValue = "{\"payload\":{\"after\":{\"id\":\"1\",\"exchange\":\"US\",\"code\":\"GOOGL\",\"gic_sector\":\"GIC\",\"month_number\":\"1\",\"year\":\"2021\",\"type\":\"MONTH\",\"median_adjusted_close\":\"1.0\",\"median_market_cap\":\"1.0\",\"median_volume\":\"1.0\",\"avg_adjusted_close\":\"1.0\",\"avg_market_cap\":\"1.0\",\"avg_volume\":\"1.0\",\"updated_date\":\"18628\"},\"op\":\"c\",\"ts_ms\":\"1627123020382\",\"transaction\":\"null\"}}";
 
 
-        TestInputTopic<byte[], byte[]> quoteTopic = testDriver.createInputTopic(this.quoteTopic, Serdes.ByteArray().serializer(), Serdes.ByteArray().serializer());
+        TestInputTopic<byte[], byte[]> topic = testDriver.createInputTopic(this.quoteTopic, Serdes.ByteArray().serializer(), Serdes.ByteArray().serializer());
 
 
-        quoteTopic.pipeInput("keyKey1".getBytes(StandardCharsets.UTF_8), firstQuoteValue.getBytes(StandardCharsets.UTF_8));
+        topic.pipeInput("keyKey1".getBytes(StandardCharsets.UTF_8), firstQuoteValue.getBytes(StandardCharsets.UTF_8));
 
-        quoteTopic.pipeInput("keyKey2".getBytes(StandardCharsets.UTF_8), secondQuoteValue.getBytes(StandardCharsets.UTF_8));
+        topic.pipeInput("keyKey2".getBytes(StandardCharsets.UTF_8), secondQuoteValue.getBytes(StandardCharsets.UTF_8));
 
-        quoteTopic.pipeInput("keyKey3".getBytes(StandardCharsets.UTF_8), thirdQuoteValue.getBytes(StandardCharsets.UTF_8));
+        topic.pipeInput("keyKey3".getBytes(StandardCharsets.UTF_8), thirdQuoteValue.getBytes(StandardCharsets.UTF_8));
 
         String quoteTopicFiltredStr = String.format(monthlyQuoteTopicFiltred, client.getUserName());
 

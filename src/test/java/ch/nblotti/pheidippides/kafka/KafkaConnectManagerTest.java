@@ -114,10 +114,10 @@ class KafkaConnectManagerTest {
     @Test
     void deleteStockConnectorError() {
 
-        RestTemplate restTemplate = Mockito.mock(RestTemplate.class);
+        RestTemplate template = Mockito.mock(RestTemplate.class);
 
-        doThrow(HttpServerErrorException.class).when(restTemplate).delete(anyString());
-        KafkaConnectManager kafkaConnectManager = new KafkaConnectManager(restTemplate, connectorquoteUrl, connectorUrl, monthlyCc, quoteTopic);
+        doThrow(HttpServerErrorException.class).when(template).delete(anyString());
+        KafkaConnectManager connectManager = new KafkaConnectManager(template, connectorquoteUrl, connectorUrl, monthlyCc, quoteTopic);
 
         Client client = Mockito.mock(Client.class);
         ResponseEntity<String> responseEntity = Mockito.mock(ResponseEntity.class);
@@ -125,7 +125,7 @@ class KafkaConnectManagerTest {
         when(client.getUserName()).thenReturn("client1");
 
 
-        assertFalse(kafkaConnectManager.deleteStockConnector(client));
+        assertFalse(connectManager.deleteStockConnector(client));
 
 
     }
