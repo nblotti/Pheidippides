@@ -28,8 +28,13 @@ import java.time.Duration;
 @Slf4j
 public class PheidippidesApplication {
 
+
+    private final StateMachine<STATES, EVENTS> stateMachine;
+
     @Autowired
-    StateMachine<STATES, EVENTS> stateMachine;
+    public PheidippidesApplication(StateMachine<STATES, EVENTS> stateMachine){
+        this.stateMachine = stateMachine;
+    }
 
     public static void main(String[] args) {
         SpringApplication.run(PheidippidesApplication.class, args);

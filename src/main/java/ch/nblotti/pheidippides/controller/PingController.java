@@ -22,13 +22,15 @@ import java.time.format.DateTimeFormatter;
 public class PingController {
 
 
-    @Autowired
-    protected DateTimeFormatter format1;
+    private final DateTimeFormatter format1;
 
 
-    @Autowired
-    private StateMachine<STATES, EVENTS> stateMachine;
+    private final StateMachine<STATES, EVENTS> stateMachine;
 
+    public PingController(StateMachine<STATES, EVENTS> stateMachine,DateTimeFormatter format1){
+        this.format1 = format1;
+        this.stateMachine = stateMachine;
+    }
     @GetMapping
     public ResponseEntity<String> ping(@PathParam(value = "key") String key) {
 
